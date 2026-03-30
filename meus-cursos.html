@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meus Cursos — SkillFlix</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <nav class="navbar scrolled" id="navbar">
+    <div class="navbar-left">
+      <a href="index.html" class="logo" id="siteLogo">SKILL<span>FLIX</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="catalogo.html">Catálogo</a></li>
+        <li><a href="meus-cursos.html" class="active">Meus Cursos</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu">
+        <div class="avatar">
+          <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=40" alt="Avatar" />
+          <i class="fas fa-caret-down"></i>
+        </div>
+        <div class="dropdown">
+          <a href="perfil.html"><i class="fas fa-user"></i> Meu Perfil</a>
+          <a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a>
+          <div class="divider"></div>
+          <a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="index.html"><i class="fas fa-home"></i> Início</a></li>
+      <li><a href="catalogo.html"><i class="fas fa-th-large"></i> Catálogo</a></li>
+      <li><a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a></li>
+      <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+  </div>
+
+  <main class="catalog-page">
+
+    <!-- PROFILE STRIP -->
+    <div style="padding: 0 4% 28px; display:flex; align-items:center; gap:20px; flex-wrap:wrap">
+      <img src="https://ui-avatars.com/api/?name=Aluno+SkillFlix&background=e50914&color=fff&size=80" alt="Avatar" style="border-radius:50%;width:72px;height:72px;border:3px solid var(--red)" />
+      <div>
+        <h2 style="font-size:1.4rem;font-weight:800">Olá, Aluno! 👋</h2>
+        <p style="color:var(--gray);font-size:0.875rem;margin-top:3px">Continue aprendendo e transforme sua carreira</p>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:12px;flex-wrap:wrap">
+        <a href="catalogo.html" class="btn-primary btn-sm"><i class="fas fa-search"></i> Explorar Cursos</a>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip" style="margin: 0 4% 32px; border-radius:8px; overflow:hidden;">
+      <div class="stat-item"><strong>12</strong><span>Cursos Inscritos</span></div>
+      <div class="stat-item"><strong>2</strong><span>Concluídos</span></div>
+      <div class="stat-item"><strong>62%</strong><span>Em Progresso</span></div>
+      <div class="stat-item"><strong>47h</strong><span>Assistidas</span></div>
+    </div>
+
+    <!-- IN PROGRESS -->
+    <div style="padding: 0 4% 24px">
+      <div class="section-header" style="padding:0;margin-bottom:16px">
+        <h2 style="font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-spinner" style="color:var(--red)"></i> Em Progresso
+        </h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px" id="inProgressList"></div>
+    </div>
+
+    <!-- FILTERS + GRID -->
+    <div class="page-header" style="margin-top:8px">
+      <h1 style="font-size:1.2rem"><i class="fas fa-play-circle" style="color:var(--red);margin-right:8px"></i>Todos os Meus Cursos</h1>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-mycoursefilter="all">Todos</button>
+      <button class="filter-btn" data-mycoursefilter="inprogress">Em Progresso</button>
+      <button class="filter-btn" data-mycoursefilter="completed">Concluídos</button>
+      <button class="filter-btn" data-mycoursefilter="notstarted">Não Iniciados</button>
+    </div>
+    <div class="course-grid" id="myCoursesGrid"></div>
+
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+      <div class="modal-hero">
+        <img src="" alt="" id="modalImg" />
+        <div class="modal-hero-overlay"></div>
+        <div class="modal-hero-content">
+          <h2 id="modalTitle"></h2>
+          <div class="modal-actions">
+            <a href="#" class="btn-primary btn-sm" id="modalWatch"><i class="fas fa-play"></i> Assistir</a>
+            <button class="btn-secondary btn-sm" id="modalList"><i class="fas fa-plus"></i> Minha Lista</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <p id="modalDesc"></p>
+          <div class="modal-tags" id="modalTags"></div>
+        </div>
+        <div class="modal-stats">
+          <div><strong id="modalLessons"></strong><small>Aulas</small></div>
+          <div><strong id="modalDuration"></strong><small>Duração</small></div>
+          <div><strong id="modalRating"></strong><small>Avaliação</small></div>
+          <div><strong id="modalLevel"></strong><small>Nível</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // In-progress cards (horizontal style)
+    const inProgressList = document.getElementById('inProgressList');
+    const inProgress = COURSES.filter(c => c.progress > 0 && c.progress < 100);
+    inProgress.forEach(c => {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:background 0.2s';
+      div.onmouseenter = () => div.style.background = 'var(--bg4)';
+      div.onmouseleave = () => div.style.background = 'var(--bg3)';
+      div.onclick = () => window.location.href = `curso.html?id=${c.id}`;
+      div.innerHTML = `
+        <div style="position:relative;width:120px;min-width:120px;border-radius:6px;overflow:hidden">
+          <img src="${c.thumb}" alt="${c.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover" />
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center">
+            <div style="width:36px;height:36px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;padding-left:3px">
+              <i class="fas fa-play" style="color:white;font-size:0.8rem"></i>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</h4>
+          <p style="font-size:0.75rem;color:var(--gray);margin-bottom:8px">${c.instructor} • ${c.lessons} aulas</p>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="flex:1;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${c.progress}%;background:var(--red);border-radius:3px"></div>
+            </div>
+            <span style="font-size:0.75rem;color:var(--red);font-weight:700;white-space:nowrap">${c.progress}%</span>
+          </div>
+        </div>
+        <a href="curso.html?id=${c.id}" class="btn-primary btn-sm" style="flex-shrink:0"><i class="fas fa-play"></i> Continuar</a>
+      `;
+      inProgressList?.appendChild(div);
+    });
+
+    // My courses filter
+    document.querySelectorAll('[data-mycoursefilter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-mycoursefilter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const f = btn.dataset.mycoursefilter;
+        const grid = document.getElementById('myCoursesGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        const filtered = COURSES.filter(c => {
+          if (f === 'all') return true;
+          if (f === 'inprogress') return c.progress > 0 && c.progress < 100;
+          if (f === 'completed') return c.progress === 100;
+          if (f === 'notstarted') return !c.progress || c.progress === 0;
+          return true;
+        });
+        filtered.forEach(c => {
+          const card = createCourseCard(c, { showProgress: c.progress > 0 });
+          card.style.minWidth = 'unset';
+          card.style.maxWidth = 'unset';
+          grid.appendChild(card);
+        });
+        if (!filtered.length) grid.innerHTML = '<p style="color:var(--gray);padding:20px 0">Nenhum curso nesta categoria.</p>';
+      });
+    });
+  </script>
+</body>
+</html>

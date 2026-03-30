@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — SkillFlix</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Minimal Navbar -->
+  <nav class="navbar scrolled" style="background:rgba(0,0,0,0.9)">
+    <div class="navbar-left">
+      <a href="index.html" class="logo" id="siteLogo">SKILL<span>FLIX</span></a>
+    </div>
+    <div class="navbar-right">
+      <a href="login.html" class="btn-primary btn-sm">Entrar</a>
+    </div>
+  </nav>
+
+  <div class="login-page">
+    <!-- Background -->
+    <div class="login-bg">
+      <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&q=60" alt="BG" />
+    </div>
+
+    <!-- Login Box -->
+    <div class="login-box">
+      <div class="login-logo">SKILL<span>FLIX</span></div>
+      <p class="login-subtitle">Acesse sua conta e continue aprendendo</p>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope" style="margin-right:6px;color:var(--red)"></i>E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="password">
+            <i class="fas fa-lock" style="margin-right:6px;color:var(--red)"></i>Senha
+            <button type="button" id="togglePass" style="float:right;font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer">
+              <i class="fas fa-eye" id="eyeIcon"></i> Mostrar
+            </button>
+          </label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span id="loginBtnText"><i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar</span>
+        </button>
+
+        <div class="login-extra">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:var(--gray)">
+            <input type="checkbox" style="accent-color:var(--red)" /> Lembrar de mim
+          </label>
+          <a href="#">Esqueci minha senha</a>
+        </div>
+      </form>
+
+      <div class="login-divider"><span>ou acesse com</span></div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showToast('Login social em breve!', 'fa-info-circle')">
+          <i class="fab fa-google" style="color:#ea4335"></i> Google
+        </button>
+        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showToast('Login social em breve!', 'fa-info-circle')">
+          <i class="fab fa-facebook" style="color:#1877f2"></i> Facebook
+        </button>
+      </div>
+
+      <p class="register-link">
+        Não tem conta? <a href="registro.html">Cadastre-se grátis</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Toggle password visibility
+    document.getElementById('togglePass')?.addEventListener('click', () => {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eyeIcon');
+      const btn = document.getElementById('togglePass');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+        btn.innerHTML = '<i class="fas fa-eye-slash" id="eyeIcon"></i> Ocultar';
+      } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+        btn.innerHTML = '<i class="fas fa-eye" id="eyeIcon"></i> Mostrar';
+      }
+    });
+
+    // Login handler
+    function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const text = document.getElementById('loginBtnText');
+      btn.disabled = true;
+      text.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Entrando...';
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

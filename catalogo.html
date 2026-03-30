@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo — SkillFlix</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="navbar-left">
+      <a href="index.html" class="logo" id="siteLogo">SKILL<span>FLIX</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="catalogo.html" class="active">Catálogo</a></li>
+        <li><a href="meus-cursos.html">Meus Cursos</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <button class="btn-search" id="searchToggle"><i class="fas fa-search"></i></button>
+      <div class="search-bar" id="searchBar">
+        <input type="text" placeholder="Buscar cursos..." id="searchInput" />
+        <button class="close-search" id="closeSearch"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="user-menu">
+        <div class="avatar">
+          <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=40" alt="Avatar" />
+          <i class="fas fa-caret-down"></i>
+        </div>
+        <div class="dropdown">
+          <a href="perfil.html"><i class="fas fa-user"></i> Meu Perfil</a>
+          <a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a>
+          <div class="divider"></div>
+          <a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="index.html"><i class="fas fa-home"></i> Início</a></li>
+      <li><a href="catalogo.html"><i class="fas fa-th-large"></i> Catálogo</a></li>
+      <li><a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a></li>
+      <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+  </div>
+
+  <!-- CATALOG -->
+  <main class="catalog-page">
+    <div class="page-header">
+      <h1><i class="fas fa-th-large" style="color:var(--red);margin-right:10px"></i>Todos os Cursos</h1>
+      <div style="display:flex;align-items:center;gap:10px">
+        <select id="sortSelect" style="background:var(--bg3);border:1px solid var(--border);color:white;padding:8px 14px;border-radius:6px;font-family:var(--font);font-size:0.85rem;outline:none;cursor:pointer">
+          <option value="popular">Mais Populares</option>
+          <option value="newest">Mais Recentes</option>
+          <option value="rating">Melhor Avaliados</option>
+          <option value="name">A-Z</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="marketing">Marketing</button>
+      <button class="filter-btn" data-filter="negocios">Negócios</button>
+      <button class="filter-btn" data-filter="vendas">Vendas</button>
+      <button class="filter-btn" data-filter="tecnologia">Tecnologia</button>
+      <button class="filter-btn" data-filter="design">Design</button>
+      <button class="filter-btn" data-filter="financas">Finanças</button>
+      <button class="filter-btn" data-filter="new" style="--clr:var(--red)">Novidades</button>
+      <button class="filter-btn" data-filter="hot">Em Alta</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip" style="margin:0 4% 24px;border-radius:8px;overflow:hidden">
+      <div class="stat-item"><strong>12</strong><span>Cursos Disponíveis</span></div>
+      <div class="stat-item"><strong>500+</strong><span>Aulas ao Total</span></div>
+      <div class="stat-item"><strong>120h+</strong><span>De Conteúdo</span></div>
+      <div class="stat-item"><strong>4.8★</strong><span>Avaliação Média</span></div>
+    </div>
+
+    <!-- COURSE GRID -->
+    <div class="course-grid" id="courseGrid"></div>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+      <div class="modal-hero">
+        <img src="" alt="" id="modalImg" />
+        <div class="modal-hero-overlay"></div>
+        <div class="modal-hero-content">
+          <h2 id="modalTitle"></h2>
+          <div class="modal-actions">
+            <a href="#" class="btn-primary btn-sm" id="modalWatch"><i class="fas fa-play"></i> Assistir</a>
+            <button class="btn-secondary btn-sm" id="modalList"><i class="fas fa-plus"></i> Minha Lista</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <p id="modalDesc"></p>
+          <div class="modal-tags" id="modalTags"></div>
+        </div>
+        <div class="modal-stats">
+          <div><strong id="modalLessons"></strong><small>Aulas</small></div>
+          <div><strong id="modalDuration"></strong><small>Duração</small></div>
+          <div><strong id="modalRating"></strong><small>Avaliação</small></div>
+          <div><strong id="modalLevel"></strong><small>Nível</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Sort handler
+    document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+      const grid = document.getElementById('courseGrid');
+      if (!grid) return;
+      const sorted = [...COURSES];
+      if (e.target.value === 'rating') sorted.sort((a,b) => b.rating - a.rating);
+      else if (e.target.value === 'name') sorted.sort((a,b) => a.title.localeCompare(b.title));
+      else if (e.target.value === 'newest') sorted.sort((a,b) => (b.badge==='new'?1:0)-(a.badge==='new'?1:0));
+      grid.innerHTML = '';
+      sorted.forEach(c => { const card = createCourseCard(c); card.style.minWidth='unset'; card.style.maxWidth='unset'; grid.appendChild(card); });
+    });
+  </script>
+</body>
+</html>
