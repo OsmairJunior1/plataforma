@@ -1,0 +1,132 @@
+/* =====================================================
+   EDUFLIX — PLAYER PAGE STYLES
+   ===================================================== */
+
+/* Video Controls */
+.video-controls {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+  padding: 0 0 10px;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.video-wrap:hover .video-controls { opacity: 1; }
+
+.vc-progress {
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  margin-bottom: 8px;
+  position: relative;
+  transition: height 0.15s;
+}
+.vc-progress:hover { height: 6px; }
+.vc-progress-fill {
+  height: 100%;
+  background: var(--red);
+  pointer-events: none;
+  border-radius: 0 2px 2px 0;
+  transition: width 0.2s linear;
+}
+
+.vc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+}
+.vc-left, .vc-right { display: flex; align-items: center; gap: 4px; }
+.vc-btn {
+  color: rgba(255,255,255,0.85);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.vc-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+.vc-time {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.75);
+  margin-left: 8px;
+  white-space: nowrap;
+  font-family: monospace;
+}
+
+/* Resource items */
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.8);
+  transition: background 0.2s;
+}
+.resource-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.resource-item i:first-child { font-size: 1.2rem; flex-shrink: 0; }
+
+/* Comments */
+.comment-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.comment-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: white;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.comment-input:focus { border-color: var(--red); }
+.comment-input::placeholder { color: var(--gray2); }
+
+.comment {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.comment-body { flex: 1; }
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.comment-meta strong { font-size: 0.875rem; }
+.comment-meta span { font-size: 0.75rem; color: var(--gray2); }
+.comment-body p { font-size: 0.875rem; color: rgba(255,255,255,0.75); line-height: 1.5; }
+
+/* Responsive player */
+@media (max-width: 1024px) {
+  .player-container { flex-direction: column; height: auto; }
+  .player-main { flex: none; }
+  .player-sidebar {
+    width: 100%;
+    max-height: 400px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .video-wrap { max-height: none; aspect-ratio: 16/9; }
+}
+
+@media (max-width: 640px) {
+  .player-info { padding: 14px 16px; }
+  .player-course-title { font-size: 1rem; }
+  .vc-time { display: none; }
+  .comment-input-row img { display: none; }
+}
