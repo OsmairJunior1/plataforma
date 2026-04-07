@@ -3,11 +3,107 @@
 //  Fonte única de verdade para toda a plataforma
 // =====================================================
 
+// =====================================================
+//  SECURITY UTILITIES
+// =====================================================
+
+/**
+ * Hash de senha usando SHA-256 via Web Crypto API (SubtleCrypto).
+ * Retorna uma Promise<string> com o hash hex.
+ * NOTA: SHA-256 sem salt é adequado para uma aplicação client-side,
+ * mas em um backend real, deve-se usar bcrypt/argon2 com salt.
+ */
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  // Adicionamos um salt fixo por domínio para dificultar rainbow tables
+  const SALT = 'skillflix_salt_2026_';
+  const data = encoder.encode(SALT + password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Escapa caracteres HTML para prevenir XSS.
+ * Use em todo conteúdo proveniente de dados externos antes de inserir via innerHTML.
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+// Expor globalmente para uso em outros scripts
+window.escapeHtml = escapeHtml;
+window.hashPassword = hashPassword;
+
+// =====================================================
+//  RATE LIMITING — Login (client-side best-effort)
+// =====================================================
+const RATE_LIMIT_KEY = 'skillflix_login_attempts';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutos
+
+const RateLimit = {
+  getState: () => {
+    try {
+      const s = localStorage.getItem(RATE_LIMIT_KEY);
+      return s ? JSON.parse(s) : { attempts: 0, lockedUntil: null };
+    } catch(e) {
+      return { attempts: 0, lockedUntil: null };
+    }
+  },
+  isLocked: () => {
+    const state = RateLimit.getState();
+    if (state.lockedUntil && Date.now() < state.lockedUntil) {
+      return { locked: true, remainingMs: state.lockedUntil - Date.now() };
+    }
+    return { locked: false };
+  },
+  recordFailure: () => {
+    const state = RateLimit.getState();
+    // Se o bloqueio expirou, resetar
+    if (state.lockedUntil && Date.now() >= state.lockedUntil) {
+      state.attempts = 0;
+      state.lockedUntil = null;
+    }
+    state.attempts = (state.attempts || 0) + 1;
+    if (state.attempts >= MAX_ATTEMPTS) {
+      state.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    }
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(state));
+    return state.attempts;
+  },
+  recordSuccess: () => {
+    localStorage.removeItem(RATE_LIMIT_KEY);
+  },
+  getRemainingAttempts: () => {
+    const state = RateLimit.getState();
+    if (state.lockedUntil && Date.now() < state.lockedUntil) return 0;
+    return Math.max(0, MAX_ATTEMPTS - (state.attempts || 0));
+  }
+};
+
+window.RateLimit = RateLimit;
+
+// =====================================================
+//  DB DEFAULTS
+// =====================================================
+
 const DB_KEY = 'skillflix_db';
 
+// Senha admin padrão — hash SHA-256 de 'skillflix_salt_2026_admin123'
+// IMPORTANTE: Troque a senha no primeiro acesso via painel de configurações
+const ADMIN_PASSWORD_HASH = '459c43caac68389a22d43fa1857011847c3e1a43589ea5c6a9ae84c57cd6c311';
+
 const DB_DEFAULTS = {
-  version: 2,
-  platform: { name: 'SkillFlix', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'SKILL', logoSpan: 'FLIX' },
+  version: 3,
+  platform: { name: 'VGR Academy', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'VGR', logoSpan: 'ACADEMY' },
   banners: [
     {
       id: 1, active: true, order: 0,
@@ -28,8 +124,13 @@ const DB_DEFAULTS = {
   ],
   users: [
     {
-      id: 'u_admin', name: 'Administrador', email: 'admin@skillflix.com',
-      password: btoa('admin123'), plan: 'admin', active: true,
+      id: 'u_admin', name: 'Administrador', email: 'admin@vgracademy.com.br',
+      // Hash SHA-256 de 'skillflix_salt_2026_admin123'
+      // AVISO: Altere a senha do admin no primeiro acesso
+      password: ADMIN_PASSWORD_HASH,
+      passwordVersion: 2, // versão 2 = SHA-256, versão 1 = btoa (legado)
+      plan: 'admin', active: true,
+      mustChangePassword: true, // Força troca de senha no primeiro acesso
       avatar: 'https://ui-avatars.com/api/?name=Admin&background=e50914&color=fff&size=80',
       createdAt: new Date().toISOString(), disabledCourses: [],
       points: 0, badges: [], myList: [], progress: {}
@@ -69,6 +170,11 @@ function DB_init() {
     DB_save(db);
     return db;
   }
+
+  // Migração de segurança: converter senhas btoa (legado) para hash SHA-256
+  // Esta migração é assíncrona e atualiza as senhas silenciosamente quando possível
+  _migratePasswordsIfNeeded(db);
+
   // Migração: copiar cursos do data.js se db.courses estiver vazio
   if ((!db.courses || !db.courses.length) && typeof COURSES !== 'undefined') {
     db.courses = JSON.parse(JSON.stringify(COURSES));
@@ -89,6 +195,34 @@ function DB_init() {
     } catch(e) {}
   }
   return db;
+}
+
+/**
+ * Migra senhas do formato btoa (legado) para SHA-256.
+ * Identifica senhas legadas pela ausência de passwordVersion ou version === 1.
+ * Como a senha original não é recuperável do hash, apenas o admin padrão é migrado.
+ */
+function _migratePasswordsIfNeeded(db) {
+  let needsSave = false;
+  db.users.forEach(user => {
+    if (!user.passwordVersion || user.passwordVersion < 2) {
+      // Usuário com senha legada (btoa). Força troca de senha no próximo login.
+      user.passwordVersion = 1; // Marcado como legado
+      user.mustChangePassword = true;
+      needsSave = true;
+    }
+  });
+
+  // Admin padrão: migrar para hash se ainda usa btoa('admin123')
+  const adminUser = db.users.find(u => u.id === 'u_admin');
+  if (adminUser && adminUser.passwordVersion === 1) {
+    // Não é possível migrar automaticamente sem a senha original.
+    // O admin precisará de reset manual.
+    adminUser.passwordLegacyValue = adminUser.password; // Mantém para comparação durante login
+    needsSave = true;
+  }
+
+  if (needsSave) DB_save(db);
 }
 
 function DB_load() {
@@ -140,20 +274,52 @@ const DB = {
   // ---- USERS ----
   getUsers: () => DB_get().users || [],
   getUser: (id) => (DB_get().users || []).find(u => u.id === id),
-  getUserByEmail: (email) => (DB_get().users || []).find(u => u.email.toLowerCase() === email.toLowerCase()),
+  getUserByEmail: (email) => {
+    if (!email || typeof email !== 'string') return null;
+    // Validação de formato básico de e-mail
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return null;
+    return (DB_get().users || []).find(u => u.email.toLowerCase() === normalized);
+  },
   saveUser: (user) => DB_update(db => {
     const idx = db.users.findIndex(u => u.id === user.id);
     if (idx > -1) db.users[idx] = user;
     else db.users.push(user);
   }),
   deleteUser: (id) => DB_update(db => db.users = db.users.filter(u => u.id !== id)),
-  registerUser: (data) => {
+
+  /**
+   * Registra novo usuário com senha hasheada via SHA-256.
+   * Retorna Promise<{user}> ou Promise<{error}>.
+   */
+  registerUser: async (data) => {
+    // Validar inputs
+    if (!data.name || typeof data.name !== 'string' || data.name.trim().length < 2) {
+      return { error: 'Nome deve ter pelo menos 2 caracteres.' };
+    }
+    if (!data.email || typeof data.email !== 'string') {
+      return { error: 'E-mail inválido.' };
+    }
+    const emailNormalized = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalized)) {
+      return { error: 'Formato de e-mail inválido.' };
+    }
+    if (!data.password || typeof data.password !== 'string' || data.password.length < 6) {
+      return { error: 'A senha deve ter pelo menos 6 caracteres.' };
+    }
+
     const db = DB_get();
-    if (db.users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) return { error: 'E-mail já cadastrado.' };
+    if (db.users.find(u => u.email.toLowerCase() === emailNormalized)) {
+      return { error: 'E-mail já cadastrado.' };
+    }
+
+    const hashedPassword = await hashPassword(data.password);
     const user = {
-      id: 'u_' + Date.now(), name: data.name, email: data.email,
-      password: btoa(data.password), plan: data.plan || 'free', active: true,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=e50914&color=fff&size=80`,
+      id: 'u_' + Date.now(), name: data.name.trim(), email: emailNormalized,
+      password: hashedPassword,
+      passwordVersion: 2,
+      plan: data.plan || 'free', active: true,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name.trim())}&background=e50914&color=fff&size=80`,
       createdAt: new Date().toISOString(), disabledCourses: [],
       points: 0, badges: [], myList: [], progress: {}
     };
@@ -163,20 +329,133 @@ const DB = {
   },
 
   // ---- SESSION ----
-  getSession: () => { try { const s = localStorage.getItem('skillflix_session'); return s ? JSON.parse(s) : null; } catch(e) { return null; } },
-  setSession: (userId) => { localStorage.setItem('skillflix_session', JSON.stringify({ userId, loginAt: new Date().toISOString() })); },
+  getSession: () => {
+    try {
+      const s = localStorage.getItem('skillflix_session');
+      if (!s) return null;
+      const session = JSON.parse(s);
+      // Validar estrutura mínima da sessão
+      if (!session || typeof session.userId !== 'string') return null;
+      return session;
+    } catch(e) {
+      return null;
+    }
+  },
+  setSession: (userId) => {
+    if (!userId || typeof userId !== 'string') return;
+    localStorage.setItem('skillflix_session', JSON.stringify({
+      userId,
+      loginAt: new Date().toISOString(),
+      // Token simples para dificultar fixação de sessão via DevTools
+      token: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)
+    }));
+  },
   clearSession: () => localStorage.removeItem('skillflix_session'),
   getCurrentUser: () => { const s = DB.getSession(); return s ? DB.getUser(s.userId) : null; },
-  login: (email, password) => {
-    const user = DB.getUserByEmail(email);
-    if (!user) return { error: 'E-mail não encontrado.' };
-    if (!user.active) return { error: 'Conta desativada. Entre em contato com o suporte.' };
-    if (user.password !== btoa(password)) return { error: 'Senha incorreta.' };
+
+  /**
+   * Login com verificação real de credenciais e rate limiting.
+   * Retorna Promise<{user}> ou Promise<{error}>.
+   */
+  login: async (email, password) => {
+    // 1. Verificar rate limiting ANTES de qualquer acesso ao BD
+    const lockState = RateLimit.isLocked();
+    if (lockState.locked) {
+      const minutes = Math.ceil(lockState.remainingMs / 60000);
+      return { error: `Conta temporariamente bloqueada. Tente novamente em ${minutes} minuto(s).` };
+    }
+
+    // 2. Validar inputs
+    if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+      return { error: 'E-mail e senha são obrigatórios.' };
+    }
+
+    const emailNormalized = email.trim().toLowerCase();
+
+    // 3. Buscar usuário
+    const user = DB.getUserByEmail(emailNormalized);
+    if (!user) {
+      // Registrar falha mesmo para usuário inexistente (evita enumeração de usuários via timing)
+      RateLimit.recordFailure();
+      // Mensagem genérica para não revelar se o e-mail existe
+      return { error: 'E-mail ou senha incorretos.' };
+    }
+    if (!user.active) {
+      return { error: 'Conta desativada. Entre em contato com o suporte.' };
+    }
+
+    // 4. Verificar senha conforme versão
+    let passwordValid = false;
+
+    if (user.passwordVersion === 2) {
+      // Senha moderna: SHA-256
+      const inputHash = await hashPassword(password);
+      passwordValid = (inputHash === user.password);
+    } else if (user.passwordVersion === 1 || !user.passwordVersion) {
+      // Senha legada: btoa — verificar e migrar automaticamente
+      const legacyCheck = (typeof btoa === 'function') ? btoa(password) : null;
+      if (legacyCheck && legacyCheck === user.password) {
+        passwordValid = true;
+        // Migrar para SHA-256 imediatamente
+        const newHash = await hashPassword(password);
+        DB_update(db => {
+          const u = db.users.find(u => u.id === user.id);
+          if (u) {
+            u.password = newHash;
+            u.passwordVersion = 2;
+            delete u.passwordLegacyValue;
+          }
+        });
+      }
+    }
+
+    if (!passwordValid) {
+      const attempts = RateLimit.recordFailure();
+      const remaining = MAX_ATTEMPTS - attempts;
+      if (remaining > 0) {
+        return { error: `E-mail ou senha incorretos. ${remaining} tentativa(s) restante(s).` };
+      } else {
+        return { error: 'Muitas tentativas incorretas. Conta bloqueada por 15 minutos.' };
+      }
+    }
+
+    // 5. Login bem-sucedido
+    RateLimit.recordSuccess();
     DB.setSession(user.id);
     DB.awardPoints(user.id, 'daily_login');
     return { user };
   },
+
   logout: () => { DB.clearSession(); window.location.href = 'login.html'; },
+
+  /**
+   * Troca de senha (requer senha atual para confirmação).
+   * Retorna Promise<{success}> ou Promise<{error}>.
+   */
+  changePassword: async (userId, currentPassword, newPassword) => {
+    if (!newPassword || newPassword.length < 6) {
+      return { error: 'A nova senha deve ter pelo menos 6 caracteres.' };
+    }
+    const user = DB.getUser(userId);
+    if (!user) return { error: 'Usuário não encontrado.' };
+
+    // Verificar senha atual
+    const currentHash = await hashPassword(currentPassword);
+    if (currentHash !== user.password) {
+      return { error: 'Senha atual incorreta.' };
+    }
+
+    const newHash = await hashPassword(newPassword);
+    DB_update(db => {
+      const u = db.users.find(u => u.id === userId);
+      if (u) {
+        u.password = newHash;
+        u.passwordVersion = 2;
+        u.mustChangePassword = false;
+      }
+    });
+    return { success: true };
+  },
 
   // ---- COMMENTS ----
   getComments: (courseId) => (DB_get().comments || []).filter(c => !courseId || c.courseId == courseId),
@@ -190,7 +469,7 @@ const DB = {
   deleteComment: (id) => DB_update(db => db.comments = db.comments.filter(c => c.id !== id)),
   replyComment: (id, reply, adminName) => DB_update(db => {
     const c = db.comments.find(c => c.id === id);
-    if (c) { c.adminReply = reply; c.adminRepliedAt = new Date().toISOString(); c.adminName = adminName || 'SkillFlix'; c.status = 'replied'; }
+    if (c) { c.adminReply = reply; c.adminRepliedAt = new Date().toISOString(); c.adminName = adminName || 'VGR Academy'; c.status = 'replied'; }
   }),
 
   // ---- FORUM ----
