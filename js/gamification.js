@@ -8,14 +8,15 @@ function showBadgeEarned(badges) {
     setTimeout(() => {
       const el = document.createElement('div');
       el.className = 'badge-earned-toast';
+      // Usar escapeHtml() nos dados do badge para prevenir XSS
       el.innerHTML = `
-        <div class="badge-earned-icon" style="background:color-mix(in srgb,${badge.color} 20%,transparent);color:${badge.color}">
-          <i class="fas ${badge.icon}"></i>
+        <div class="badge-earned-icon" style="background:color-mix(in srgb,${escapeHtml(badge.color)} 20%,transparent);color:${escapeHtml(badge.color)}">
+          <i class="fas ${escapeHtml(badge.icon)}"></i>
         </div>
         <div>
           <strong>Badge conquistado!</strong>
-          <p>${badge.name}</p>
-          <small>${badge.desc}</small>
+          <p>${escapeHtml(badge.name)}</p>
+          <small>${escapeHtml(badge.desc)}</small>
         </div>
       `;
       document.body.appendChild(el);
