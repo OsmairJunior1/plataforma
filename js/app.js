@@ -4,7 +4,7 @@
 
 /* ---- CARREGAR ESTADO DO PAINEL (localStorage) ---- */
 const DEFAULT_STATE = {
-  platform: { name: 'SkillFlix', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'SKILL', logoSpan: 'FLIX' },
+  platform: { name: 'VGR Academy', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'VGR', logoSpan: 'ACADEMY' },
   hero: {
     type: 'video',
     url: 'Hoje nossa reuni%C3%A3o no BNI foi marcada por conex%C3%B5es poderosas e muita gera%C3%A7%C3%A3o de neg%C3%B3cios.Tivemos.mp4',
@@ -37,21 +37,24 @@ function applyAdminState() {
   const { platform, hero, featured, courses } = state;
   if (platform) {
     // Atualiza logo em todos os elementos com id="siteLogo"
+    // Usar escapeHtml() para prevenir XSS via dados do painel
+    const safeLogoText = escapeHtml(platform.logoText || 'SKILL');
+    const safeLogoSpan = escapeHtml(platform.logoSpan || 'FLIX');
     document.querySelectorAll('#siteLogo, .logo').forEach(el => {
-      el.innerHTML = `${platform.logoText || 'SKILL'}<span>${platform.logoSpan || 'FLIX'}</span>`;
+      el.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
     });
     // Atualiza login-logo se existir
     const loginLogo = document.querySelector('.login-logo');
-    if (loginLogo) loginLogo.innerHTML = `${platform.logoText || 'SKILL'}<span>${platform.logoSpan || 'FLIX'}</span>`;
+    if (loginLogo) loginLogo.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
     // Atualiza footer logo
     const footerLogo = document.querySelector('.footer-logo');
-    if (footerLogo) footerLogo.innerHTML = `${platform.logoText || 'SKILL'}<span>${platform.logoSpan || 'FLIX'}</span>`;
+    if (footerLogo) footerLogo.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
     // Cor principal
     if (platform.primaryColor) {
       document.documentElement.style.setProperty('--red', platform.primaryColor);
     }
     // Título da aba
-    document.title = document.title.replace(/SkillFlix|EduFlix/g, platform.name || 'SkillFlix');
+    document.title = document.title.replace(/VGR Academy|SkillFlix|EduFlix/g, platform.name || 'VGR Academy');
   }
 
   // --- Hero (apenas na index) ---
@@ -89,7 +92,7 @@ function applyAdminState() {
     const titleEl = document.getElementById('heroTitleEl');
     if (titleEl) {
       const highlight = hero.titleHighlight !== false;
-      titleEl.innerHTML = `${hero.titleLine1 || ''}<br /><span style="color:${highlight ? 'var(--red)' : 'inherit'}">${hero.titleLine2 || ''}</span>`;
+      titleEl.innerHTML = `${escapeHtml(hero.titleLine1 || '')}<br /><span style="color:${highlight ? 'var(--red)' : 'inherit'}">${escapeHtml(hero.titleLine2 || '')}</span>`;
     }
 
     const descEl = document.getElementById('heroDescEl');
@@ -100,13 +103,13 @@ function applyAdminState() {
     const featuredCourse = courses?.find(c => c.id === hero.featuredCourseId) || courses?.[0];
     if (metaEl && featuredCourse) {
       metaEl.innerHTML = `
-        <span class="rating"><i class="fas fa-star"></i> ${featuredCourse.rating}</span>
+        <span class="rating"><i class="fas fa-star"></i> ${escapeHtml(String(featuredCourse.rating))}</span>
         <span class="separator">•</span>
-        <span>${featuredCourse.lessons} aulas</span>
+        <span>${escapeHtml(String(featuredCourse.lessons))} aulas</span>
         <span class="separator">•</span>
-        <span>${featuredCourse.duration}</span>
+        <span>${escapeHtml(featuredCourse.duration)}</span>
         <span class="separator">•</span>
-        <span class="badge-level">${featuredCourse.level}</span>
+        <span class="badge-level">${escapeHtml(featuredCourse.level)}</span>
       `;
       const watchBtn = document.getElementById('heroWatchBtn');
       if (watchBtn) watchBtn.href = `curso.html?id=${featuredCourse.id}`;
@@ -190,12 +193,16 @@ function createCourseCard(course, opts = {}) {
   card.className = 'course-card' + (showTop10 ? ' top10-card' : '');
   card.dataset.id = course.id;
 
-  const badgeHTML = course.badge
-    ? `<span class="card-badge badge-${course.badge}">${course.badge === 'new' ? 'Novo' : course.badge === 'hot' ? '🔥 Hot' : course.badge === 'free' ? 'Grátis' : '⭐ Top'}</span>`
+  // Whitelist de badges válidos para evitar injeção de classe CSS arbitrária
+  const VALID_BADGES = { new: 'Novo', hot: '🔥 Hot', free: 'Grátis', top: '⭐ Top' };
+  const badgeHTML = course.badge && VALID_BADGES[course.badge]
+    ? `<span class="card-badge badge-${escapeHtml(course.badge)}">${VALID_BADGES[course.badge]}</span>`
     : '';
 
-  const progressHTML = showProgress && course.progress > 0
-    ? `<div class="card-progress"><div class="card-progress-fill" style="width:${course.progress}%"></div></div>`
+  // Garantir que progress seja um número entre 0-100
+  const safeProgress = Math.min(100, Math.max(0, Number(course.progress) || 0));
+  const progressHTML = showProgress && safeProgress > 0
+    ? `<div class="card-progress"><div class="card-progress-fill" style="width:${safeProgress}%"></div></div>`
     : '';
 
   const top10HTML = showTop10
@@ -204,31 +211,32 @@ function createCourseCard(course, opts = {}) {
 
   const inList = MY_LIST.includes(course.id);
 
+  // Todos os dados de curso passam por escapeHtml() antes de innerHTML
   card.innerHTML = `
     <div class="card-thumb">
-      <img src="${course.thumb}" alt="${course.title}" loading="lazy" />
+      <img src="${escapeHtml(course.thumb)}" alt="${escapeHtml(course.title)}" loading="lazy" />
       <div class="card-play-btn"><i class="fas fa-play"></i></div>
       <div class="card-badges">${badgeHTML}</div>
       ${top10HTML}
       ${progressHTML}
     </div>
     <div class="card-body">
-      <div class="card-title">${course.title}</div>
+      <div class="card-title">${escapeHtml(course.title)}</div>
       <div class="card-meta">
-        <span class="star"><i class="fas fa-star"></i> ${course.rating}</span>
-        <span>${course.lessons} aulas</span>
-        <span>${course.level}</span>
+        <span class="star"><i class="fas fa-star"></i> ${escapeHtml(String(course.rating))}</span>
+        <span>${escapeHtml(String(course.lessons))} aulas</span>
+        <span>${escapeHtml(course.level)}</span>
       </div>
     </div>
     <div class="card-expanded">
-      <p>${course.desc}</p>
+      <p>${escapeHtml(course.desc)}</p>
       <div class="card-actions">
         <button class="card-btn play-small" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
         <button class="card-btn btn-addlist" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}">
           <i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i>
         </button>
         <button class="card-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>
-        <span style="margin-left:auto;font-size:0.7rem;color:var(--gray)">${course.duration}</span>
+        <span style="margin-left:auto;font-size:0.7rem;color:var(--gray)">${escapeHtml(course.duration)}</span>
       </div>
     </div>
   `;
@@ -323,7 +331,7 @@ function openModal(course) {
   document.getElementById('modalWatch').href = `curso.html?id=${course.id}`;
 
   const tagsEl = document.getElementById('modalTags');
-  tagsEl.innerHTML = course.tags.map(t => `<span>${t}</span>`).join('');
+  tagsEl.innerHTML = course.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('');
 
   modalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -444,21 +452,21 @@ if (document.getElementById('lessonList')) {
   lessonData.forEach(module => {
     const modHeader = document.createElement('div');
     modHeader.className = 'module-header';
-    modHeader.innerHTML = `<h4>${module.module}</h4><span>${module.lessons.length} aulas</span>`;
+    modHeader.innerHTML = `<h4>${escapeHtml(module.module)}</h4><span>${escapeHtml(String(module.lessons.length))} aulas</span>`;
     list.appendChild(modHeader);
 
     module.lessons.forEach((lesson, i) => {
       const item = document.createElement('div');
       item.className = 'lesson-item' + (lesson.done ? ' completed' : '') + (i === 0 ? ' active' : '');
       item.innerHTML = `
-        <span class="lesson-number">${lesson.done ? '<i class="fas fa-check" style="color:var(--red)"></i>' : lesson.id}</span>
+        <span class="lesson-number">${lesson.done ? '<i class="fas fa-check" style="color:var(--red)"></i>' : escapeHtml(String(lesson.id))}</span>
         <div class="lesson-thumb">
-          <img src="${lesson.thumb}" alt="${lesson.title}" loading="lazy" />
+          <img src="${escapeHtml(lesson.thumb)}" alt="${escapeHtml(lesson.title)}" loading="lazy" />
           ${lesson.done ? '<div class="done-overlay"><i class="fas fa-check"></i></div>' : ''}
         </div>
         <div class="lesson-details">
-          <h4>${lesson.title}</h4>
-          <span><i class="fas fa-clock" style="margin-right:4px"></i>${lesson.duration}</span>
+          <h4>${escapeHtml(lesson.title)}</h4>
+          <span><i class="fas fa-clock" style="margin-right:4px"></i>${escapeHtml(lesson.duration)}</span>
         </div>
       `;
       item.addEventListener('click', () => {
