@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player — VGR Academy</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/player.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body class="player-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="navbar-left">
+      <a href="index.html" class="logo" id="siteLogo">VGR<span>ACADEMY</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="catalogo.html">Catálogo</a></li>
+        <li><a href="meus-cursos.html" class="active">Meus Cursos</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu" id="userMenu">
+        <div class="avatar">
+          <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=40" alt="Avatar" />
+          <i class="fas fa-caret-down"></i>
+        </div>
+        <div class="dropdown">
+          <a href="perfil.html"><i class="fas fa-user"></i> Meu Perfil</a>
+          <a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a>
+          <div class="divider"></div>
+          <a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="index.html"><i class="fas fa-home"></i> Início</a></li>
+      <li><a href="catalogo.html"><i class="fas fa-th-large"></i> Catálogo</a></li>
+      <li><a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a></li>
+      <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+  </div>
+
+  <!-- PLAYER LAYOUT -->
+  <div class="player-container">
+
+    <!-- LEFT: VIDEO + INFO -->
+    <div class="player-main">
+      <!-- VIDEO -->
+      <div class="video-wrap">
+        <div class="video-placeholder" id="videoPlaceholder">
+          <img src="" alt="Capa" id="videoThumb" />
+          <div class="big-play"><i class="fas fa-play"></i></div>
+          <span class="video-title">Clique para reproduzir</span>
+        </div>
+        <!-- Custom Controls Bar -->
+        <div class="video-controls">
+          <div class="vc-progress">
+            <div class="vc-progress-fill" id="vcFill" style="width:0%"></div>
+          </div>
+          <div class="vc-row">
+            <div class="vc-left">
+              <button class="vc-btn" id="vcPlayPause"><i class="fas fa-play"></i></button>
+              <button class="vc-btn" id="vcPrev" title="Aula anterior"><i class="fas fa-backward-step"></i></button>
+              <button class="vc-btn" id="vcNext" title="Próxima aula"><i class="fas fa-forward-step"></i></button>
+              <div class="vc-time">0:00 / 0:00</div>
+            </div>
+            <div class="vc-right">
+              <button class="vc-btn" title="Velocidade"><i class="fas fa-gauge-high"></i></button>
+              <button class="vc-btn" title="Legenda"><i class="fas fa-closed-captioning"></i></button>
+              <button class="vc-btn" id="vcFullscreen" title="Tela cheia"><i class="fas fa-expand"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFO TABS -->
+      <div class="player-info">
+        <h1 class="player-course-title" id="courseTitleEl">Carregando...</h1>
+        <p class="player-lesson-title" id="lessonTitleEl">Selecione uma aula</p>
+        <div class="player-meta-row">
+          <span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-user" style="color:var(--red);margin-right:4px"></i> Prof. André Lima</span>
+          <span class="badge-level" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;font-size:0.75rem">Iniciante</span>
+          <span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-star" style="color:#ffd700;margin-right:4px"></i> 4.9</span>
+        </div>
+
+        <div class="player-tabs">
+          <button class="player-tab active" data-tab="tab-desc">Descrição</button>
+          <button class="player-tab" data-tab="tab-resources">Materiais</button>
+          <button class="player-tab" data-tab="tab-comments">Comentários</button>
+          <button class="player-tab" data-tab="tab-notes">Minhas Notas</button>
+        </div>
+
+        <div id="tab-desc" class="player-tab-content active">
+          <p style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.7">
+            Aprenda as estratégias mais poderosas de marketing digital. Este curso completo cobre desde os fundamentos até técnicas avançadas utilizadas pelos maiores players do mercado.
+          </p>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
+              <i class="fas fa-check-circle" style="color:var(--red)"></i> Certificado de conclusão incluso
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
+              <i class="fas fa-check-circle" style="color:var(--red)"></i> Acesso vitalício
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
+              <i class="fas fa-check-circle" style="color:var(--red)"></i> Suporte via comunidade exclusiva
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
+              <i class="fas fa-check-circle" style="color:var(--red)"></i> Atualizações gratuitas
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-resources" class="player-tab-content">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="#" class="resource-item">
+              <i class="fas fa-file-pdf" style="color:#e74c3c"></i>
+              <span>Apostila do Módulo 1 — Fundamentos.pdf</span>
+              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
+            </a>
+            <a href="#" class="resource-item">
+              <i class="fas fa-file-powerpoint" style="color:#e67e22"></i>
+              <span>Slides — Aula 1 ao 4.pptx</span>
+              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
+            </a>
+            <a href="#" class="resource-item">
+              <i class="fas fa-file-excel" style="color:#27ae60"></i>
+              <span>Planilha — Métricas de Marketing.xlsx</span>
+              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
+            </a>
+          </div>
+        </div>
+
+        <div id="tab-comments" class="player-tab-content">
+          <div class="comment-input-row">
+            <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="Você" style="border-radius:50%;width:36px;height:36px" />
+            <input type="text" class="comment-input" placeholder="Deixe sua dúvida ou comentário..." id="commentInput" />
+            <button class="btn-primary btn-sm" onclick="postComment()">Enviar</button>
+          </div>
+          <div id="commentsList">
+            <div class="comment">
+              <img src="https://ui-avatars.com/api/?name=João+Silva&background=2196f3&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
+              <div class="comment-body">
+                <div class="comment-meta"><strong>João Silva</strong> <span>há 2 dias</span></div>
+                <p>Excelente aula! Ficou bem claro o conceito de funil. Já apliquei no meu negócio!</p>
+                <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 12 curtidas · Responder</button>
+              </div>
+            </div>
+            <div class="comment">
+              <img src="https://ui-avatars.com/api/?name=Maria+Costa&background=9c27b0&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
+              <div class="comment-body">
+                <div class="comment-meta"><strong>Maria Costa</strong> <span>há 5 dias</span></div>
+                <p>Professor, qual ferramenta você recomenda para começar em SEO com orçamento limitado?</p>
+                <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 8 curtidas · Responder</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-notes" class="player-tab-content">
+          <textarea id="notesArea" placeholder="Escreva suas anotações aqui. Elas ficam salvas automaticamente..." style="width:100%;min-height:150px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:14px;color:white;font-family:var(--font);font-size:0.9rem;outline:none;resize:vertical;line-height:1.6"></textarea>
+          <button class="btn-primary btn-sm" style="margin-top:10px" onclick="saveNotes()"><i class="fas fa-save"></i> Salvar Notas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: LESSON LIST -->
+    <aside class="player-sidebar">
+      <div class="sidebar-header">
+        <h3>Conteúdo do Curso</h3>
+        <small>48 aulas • 12h 30min</small>
+        <div class="sidebar-progress-bar">
+          <div class="sidebar-progress-fill" style="width: 4%"></div>
+        </div>
+        <small style="display:block;margin-top:4px;font-size:0.7rem;color:var(--red)">4% concluído</small>
+      </div>
+      <div id="lessonList"></div>
+    </aside>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Video control mock
+    let playing = false;
+    const vcPlayPause = document.getElementById('vcPlayPause');
+    const vcFill = document.getElementById('vcFill');
+    const placeholder = document.getElementById('videoPlaceholder');
+
+    placeholder?.addEventListener('click', () => {
+      playing = !playing;
+      if (vcPlayPause) vcPlayPause.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+      if (playing) simulateProgress();
+    });
+    vcPlayPause?.addEventListener('click', () => {
+      placeholder?.click();
+    });
+
+    let progress = 0, interval;
+    function simulateProgress() {
+      clearInterval(interval);
+      if (!playing) return;
+      interval = setInterval(() => {
+        if (!playing) { clearInterval(interval); return; }
+        progress = Math.min(progress + 0.05, 100);
+        if (vcFill) vcFill.style.width = progress + '%';
+        const t = document.querySelector('.vc-time');
+        const secs = Math.round(progress * 7.5);
+        const m = Math.floor(secs / 60), s = secs % 60;
+        if (t) t.textContent = `${m}:${s.toString().padStart(2,'0')} / 12:30`;
+        if (progress >= 100) { clearInterval(interval); playing = false; }
+      }, 200);
+    }
+
+    // Fullscreen
+    document.getElementById('vcFullscreen')?.addEventListener('click', () => {
+      const vw = document.querySelector('.video-wrap');
+      if (!document.fullscreenElement) vw?.requestFullscreen();
+      else document.exitFullscreen();
+    });
+
+    // Notes autosave
+    const notesArea = document.getElementById('notesArea');
+    if (notesArea) {
+      const saved = localStorage.getItem('eduflix_notes');
+      if (saved) notesArea.value = saved;
+      notesArea.addEventListener('input', () => localStorage.setItem('eduflix_notes', notesArea.value));
+    }
+    function saveNotes() {
+      localStorage.setItem('eduflix_notes', document.getElementById('notesArea')?.value || '');
+      showToast('Notas salvas com sucesso!');
+    }
+
+    // Comments
+    function postComment() {
+      const input = document.getElementById('commentInput');
+      if (!input?.value.trim()) return;
+      const list = document.getElementById('commentsList');
+      const div = document.createElement('div');
+      div.className = 'comment';
+      div.innerHTML = `
+        <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
+        <div class="comment-body">
+          <div class="comment-meta"><strong>Você</strong> <span>agora</span></div>
+          <p>${input.value.trim()}</p>
+          <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 0 curtidas · Responder</button>
+        </div>
+      `;
+      list?.prepend(div);
+      input.value = '';
+      showToast('Comentário enviado!');
+    }
+  </script>
+</body>
+</html>

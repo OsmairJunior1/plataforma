@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar Conta — VGR Academy</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <nav class="navbar scrolled" style="background:rgba(0,0,0,0.9)">
+    <div class="navbar-left">
+      <a href="landing.html" class="logo">VGR<span>ACADEMY</span></a>
+    </div>
+    <div class="navbar-right">
+      <a href="login.html" class="btn-secondary btn-sm">Entrar</a>
+    </div>
+  </nav>
+
+  <div class="login-page">
+    <div class="login-bg">
+      <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&q=60" alt="BG" />
+    </div>
+
+    <div class="login-box">
+      <div class="login-logo">VGR<span>ACADEMY</span></div>
+      <p class="login-subtitle">Crie sua conta e comece a aprender</p>
+
+      <div id="regMessage" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;font-weight:500"></div>
+
+      <form id="regForm" onsubmit="handleRegister(event)" novalidate>
+        <div class="form-group">
+          <label for="name"><i class="fas fa-user" style="margin-right:6px;color:var(--red)"></i>Nome completo</label>
+          <input type="text" id="name" placeholder="Seu nome" required autocomplete="name" maxlength="100" />
+        </div>
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope" style="margin-right:6px;color:var(--red)"></i>E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email" maxlength="254" />
+        </div>
+        <div class="form-group">
+          <label for="password">
+            <i class="fas fa-lock" style="margin-right:6px;color:var(--red)"></i>Senha
+            <button type="button" id="togglePass" style="float:right;font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer">
+              <i class="fas fa-eye"></i> Mostrar
+            </button>
+          </label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" required autocomplete="new-password" maxlength="128" />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword"><i class="fas fa-lock" style="margin-right:6px;color:var(--red)"></i>Confirmar senha</label>
+          <input type="password" id="confirmPassword" placeholder="Repita a senha" required autocomplete="new-password" maxlength="128" />
+        </div>
+
+        <button type="submit" class="login-btn" id="regBtn">
+          <span id="regBtnText"><i class="fas fa-user-plus" style="margin-right:8px"></i>Criar Conta</span>
+        </button>
+      </form>
+
+      <p class="register-link" style="margin-top:20px">
+        Já tem conta? <a href="login.html">Entrar</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    // ---- Toggle senha ----
+    document.getElementById('togglePass')?.addEventListener('click', () => {
+      const input = document.getElementById('password');
+      const btn = document.getElementById('togglePass');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="fas fa-eye"></i> Mostrar';
+      }
+    });
+
+    function showMessage(text, type = 'error') {
+      const el = document.getElementById('regMessage');
+      if (!el) return;
+      const styles = {
+        error:   'background:rgba(229,57,20,0.12);border:1px solid rgba(229,57,20,0.4);color:#e57373',
+        success: 'background:rgba(0,200,83,0.12);border:1px solid rgba(0,200,83,0.4);color:#00c853',
+        warning: 'background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.4);color:#f5a623'
+      };
+      el.style.cssText = `${styles[type]};display:block;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;font-weight:500`;
+      el.textContent = text;
+    }
+
+    // ---- Cadastro com Supabase Auth ----
+    async function handleRegister(e) {
+      e.preventDefault();
+
+      const name     = (document.getElementById('name')?.value || '').trim();
+      const email    = (document.getElementById('email')?.value || '').trim();
+      const password = document.getElementById('password')?.value || '';
+      const confirm  = document.getElementById('confirmPassword')?.value || '';
+
+      if (!name)  { showMessage('Informe seu nome.'); return; }
+      if (name.length < 2) { showMessage('Nome muito curto.'); return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMessage('E-mail inválido.'); return; }
+      if (password.length < 6) { showMessage('A senha deve ter pelo menos 6 caracteres.'); return; }
+      if (password !== confirm) { showMessage('As senhas não coincidem.'); return; }
+
+      const btn = document.getElementById('regBtn');
+      const txt = document.getElementById('regBtnText');
+      if (btn) btn.disabled = true;
+      if (txt) txt.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Criando conta...';
+
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name }   // raw_user_meta_data → trigger cria o perfil automaticamente
+          }
+        });
+
+        if (error) {
+          let msg = 'Erro ao criar conta. Tente novamente.';
+          if (error.message?.includes('already registered')) msg = 'Este e-mail já está cadastrado.';
+          if (error.message?.includes('Password')) msg = 'Senha muito fraca. Use pelo menos 6 caracteres.';
+          showMessage(msg);
+          if (btn) btn.disabled = false;
+          if (txt) txt.innerHTML = '<i class="fas fa-user-plus" style="margin-right:8px"></i>Criar Conta';
+          return;
+        }
+
+        // Supabase pode exigir confirmação de e-mail (depende das configurações)
+        if (data.user && !data.session) {
+          showMessage('Conta criada! Verifique seu e-mail para confirmar o cadastro.', 'success');
+          if (txt) txt.innerHTML = '<i class="fas fa-check" style="margin-right:8px"></i>Conta criada!';
+          return;
+        }
+
+        // Sem confirmação de e-mail — já logado
+        if (txt) txt.innerHTML = '<i class="fas fa-check" style="margin-right:8px"></i>Conta criada!';
+        showMessage('Conta criada com sucesso! Redirecionando...', 'success');
+        setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+
+      } catch (err) {
+        showMessage('Erro inesperado. Tente novamente.');
+        if (btn) btn.disabled = false;
+        if (txt) txt.innerHTML = '<i class="fas fa-user-plus" style="margin-right:8px"></i>Criar Conta';
+      }
+    }
+  </script>
+</body>
+</html>
