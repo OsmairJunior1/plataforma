@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Entrar — SkillFlix</title>
+  <title>Entrar — VGR Academy</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -13,7 +13,7 @@
   <!-- Minimal Navbar -->
   <nav class="navbar scrolled" style="background:rgba(0,0,0,0.9)">
     <div class="navbar-left">
-      <a href="index.html" class="logo" id="siteLogo">SKILL<span>FLIX</span></a>
+      <a href="index.html" class="logo" id="siteLogo">VGR<span>ACADEMY</span></a>
     </div>
     <div class="navbar-right">
       <a href="login.html" class="btn-primary btn-sm">Entrar</a>
@@ -28,13 +28,23 @@
 
     <!-- Login Box -->
     <div class="login-box">
-      <div class="login-logo">SKILL<span>FLIX</span></div>
+      <div class="login-logo">VGR<span>ACADEMY</span></div>
       <p class="login-subtitle">Acesse sua conta e continue aprendendo</p>
 
-      <form id="loginForm" onsubmit="handleLogin(event)">
+      <!-- Aviso de ambiente client-side -->
+      <div id="securityNotice" style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.4);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem;color:#f5a623;display:flex;align-items:flex-start;gap:8px">
+        <i class="fas fa-shield-alt" style="margin-top:2px;flex-shrink:0"></i>
+        <span>Plataforma de demonstração. Dados armazenados localmente no seu navegador.</span>
+      </div>
+
+      <!-- Mensagem de erro/sucesso -->
+      <div id="loginMessage" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;font-weight:500"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
         <div class="form-group">
           <label for="email"><i class="fas fa-envelope" style="margin-right:6px;color:var(--red)"></i>E-mail</label>
-          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email" />
+          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email"
+                 maxlength="254" />
         </div>
         <div class="form-group">
           <label for="password">
@@ -43,8 +53,12 @@
               <i class="fas fa-eye" id="eyeIcon"></i> Mostrar
             </button>
           </label>
-          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password"
+                 maxlength="128" />
         </div>
+
+        <!-- Indicador de tentativas restantes -->
+        <div id="attemptsInfo" style="font-size:0.75rem;color:var(--gray);margin-bottom:10px;min-height:18px"></div>
 
         <button type="submit" class="login-btn" id="loginBtn">
           <span id="loginBtnText"><i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar</span>
@@ -52,7 +66,7 @@
 
         <div class="login-extra">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:var(--gray)">
-            <input type="checkbox" style="accent-color:var(--red)" /> Lembrar de mim
+            <input type="checkbox" id="rememberMe" style="accent-color:var(--red)" /> Lembrar de mim
           </label>
           <a href="#">Esqueci minha senha</a>
         </div>
@@ -61,10 +75,10 @@
       <div class="login-divider"><span>ou acesse com</span></div>
 
       <div style="display:flex;gap:10px">
-        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showToast('Login social em breve!', 'fa-info-circle')">
+        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showLoginToast('Login social em breve!', 'fa-info-circle')">
           <i class="fab fa-google" style="color:#ea4335"></i> Google
         </button>
-        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showToast('Login social em breve!', 'fa-info-circle')">
+        <button class="btn-secondary" style="flex:1;justify-content:center;gap:8px;font-size:0.85rem" onclick="showLoginToast('Login social em breve!', 'fa-info-circle')">
           <i class="fab fa-facebook" style="color:#1877f2"></i> Facebook
         </button>
       </div>
@@ -76,35 +90,177 @@
   </div>
 
   <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/db.js"></script>
   <script>
-    // Toggle password visibility
+    // ---- Toggle password visibility ----
     document.getElementById('togglePass')?.addEventListener('click', () => {
       const input = document.getElementById('password');
-      const icon = document.getElementById('eyeIcon');
       const btn = document.getElementById('togglePass');
       if (input.type === 'password') {
         input.type = 'text';
-        icon.className = 'fas fa-eye-slash';
         btn.innerHTML = '<i class="fas fa-eye-slash" id="eyeIcon"></i> Ocultar';
       } else {
         input.type = 'password';
-        icon.className = 'fas fa-eye';
         btn.innerHTML = '<i class="fas fa-eye" id="eyeIcon"></i> Mostrar';
       }
     });
 
-    // Login handler
-    function handleLogin(e) {
+    // ---- Mostrar estado do rate limiting ao carregar ----
+    function updateAttemptsDisplay() {
+      const lockState = RateLimit.isLocked();
+      const attemptsEl = document.getElementById('attemptsInfo');
+      const loginBtn = document.getElementById('loginBtn');
+
+      if (lockState.locked) {
+        const minutes = Math.ceil(lockState.remainingMs / 60000);
+        attemptsEl.textContent = `Bloqueado por ${minutes} minuto(s) devido a muitas tentativas.`;
+        attemptsEl.style.color = '#e57373';
+        if (loginBtn) loginBtn.disabled = true;
+      } else {
+        const remaining = RateLimit.getRemainingAttempts();
+        if (remaining < 5) {
+          attemptsEl.textContent = `${remaining} tentativa(s) restante(s) antes do bloqueio.`;
+          attemptsEl.style.color = remaining <= 2 ? '#e57373' : '#f5a623';
+        } else {
+          attemptsEl.textContent = '';
+        }
+        if (loginBtn) loginBtn.disabled = false;
+      }
+    }
+
+    updateAttemptsDisplay();
+    // Atualizar display a cada 30 segundos caso esteja bloqueado
+    setInterval(updateAttemptsDisplay, 30000);
+
+    // ---- Mostrar mensagem de erro/sucesso ----
+    function showMessage(text, type = 'error') {
+      const el = document.getElementById('loginMessage');
+      if (!el) return;
+      const styles = {
+        error: 'background:rgba(229,57,20,0.12);border:1px solid rgba(229,57,20,0.4);color:#e57373',
+        success: 'background:rgba(0,200,83,0.12);border:1px solid rgba(0,200,83,0.4);color:#00c853',
+        warning: 'background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.4);color:#f5a623'
+      };
+      el.style.cssText = `${styles[type] || styles.error};display:block;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;font-weight:500`;
+      // Usar textContent para evitar XSS
+      el.textContent = text;
+    }
+
+    function hideMessage() {
+      const el = document.getElementById('loginMessage');
+      if (el) el.style.display = 'none';
+    }
+
+    // ---- Login handler com verificação real de credenciais ----
+    async function handleLogin(e) {
       e.preventDefault();
+      hideMessage();
+
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
       const btn = document.getElementById('loginBtn');
       const text = document.getElementById('loginBtnText');
-      btn.disabled = true;
-      text.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Entrando...';
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 1500);
+
+      // Validação client-side básica
+      const email = emailInput?.value?.trim() || '';
+      const password = passwordInput?.value || '';
+
+      if (!email || !password) {
+        showMessage('Preencha e-mail e senha.');
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showMessage('Formato de e-mail inválido.');
+        return;
+      }
+
+      if (password.length < 1 || password.length > 128) {
+        showMessage('Senha inválida.');
+        return;
+      }
+
+      // Verificar bloqueio ANTES de fazer qualquer processamento
+      const lockState = RateLimit.isLocked();
+      if (lockState.locked) {
+        const minutes = Math.ceil(lockState.remainingMs / 60000);
+        showMessage(`Conta bloqueada temporariamente. Tente em ${minutes} minuto(s).`, 'warning');
+        return;
+      }
+
+      // Desabilitar botão e mostrar spinner
+      if (btn) btn.disabled = true;
+      if (text) text.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Verificando...';
+
+      try {
+        // Chamada real ao sistema de autenticação com verificação de credenciais
+        const result = await DB.login(email, password);
+
+        if (result.error) {
+          showMessage(result.error, 'error');
+          updateAttemptsDisplay();
+          // Limpar campo de senha por segurança
+          if (passwordInput) passwordInput.value = '';
+          if (btn) btn.disabled = false;
+          if (text) text.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar';
+          return;
+        }
+
+        // Login bem-sucedido
+        if (text) text.innerHTML = '<i class="fas fa-check" style="margin-right:8px"></i>Entrando...';
+
+        // Verificar se usuário precisa trocar senha
+        if (result.user.mustChangePassword) {
+          showMessage('Por segurança, você deve alterar sua senha no primeiro acesso.', 'warning');
+          setTimeout(() => {
+            window.location.href = 'configuracoes.html?changePassword=1';
+          }, 1500);
+          return;
+        }
+
+        // Determinar destino de redirecionamento
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+
+        // Validar o parâmetro redirect — apenas caminhos relativos simples, sem protocolos
+        const safeRedirect = redirect && /^[a-zA-Z0-9\-_./?=&]+\.html/.test(redirect) ? redirect : 'index.html';
+
+        setTimeout(() => {
+          window.location.href = safeRedirect;
+        }, 600);
+
+      } catch (err) {
+        showMessage('Erro inesperado. Tente novamente.');
+        if (btn) btn.disabled = false;
+        if (text) text.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar';
+      }
     }
+
+    // Toast simples para página de login (não depende do app.js)
+    function showLoginToast(msg, icon) {
+      let container = document.querySelector('.toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      const iconEl = document.createElement('i');
+      iconEl.className = 'fas ' + icon;
+      toast.appendChild(iconEl);
+      toast.appendChild(document.createTextNode(' ' + msg));
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3200);
+    }
+
+    // Redirecionar se já está logado
+    (function() {
+      const session = DB.getSession();
+      if (session && DB.getUser(session.userId)) {
+        window.location.href = 'index.html';
+      }
+    })();
   </script>
 </body>
 </html>
