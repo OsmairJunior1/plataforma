@@ -12,11 +12,11 @@ function loadState() {
   } catch(e) {}
   return {
     platform: {
-      name: 'SkillFlix',
+      name: 'VGR Academy',
       tagline: 'Sua Plataforma de Cursos',
       primaryColor: '#e50914',
-      logoText: 'SKILL',
-      logoSpan: 'FLIX',
+      logoText: 'VGR',
+      logoSpan: 'ACADEMY',
     },
     hero: {
       type: 'video', // 'video' | 'image'
@@ -93,14 +93,15 @@ function renderActivity() {
   if (!list) return;
   const acts = adminState.activity.slice(-6).reverse();
   if (!acts.length) { list.innerHTML = '<p style="color:var(--gray2);font-size:0.82rem;padding:8px 0">Nenhuma atividade ainda.</p>'; return; }
+  // escapeHtml() em todos os dados dinâmicos para prevenir XSS
   list.innerHTML = acts.map(a => `
     <div class="activity-item">
-      <div class="activity-icon" style="background:color-mix(in srgb, ${a.color} 15%, transparent); color:${a.color}">
-        <i class="fas ${a.icon}"></i>
+      <div class="activity-icon" style="background:color-mix(in srgb, ${escapeHtml(a.color)} 15%, transparent); color:${escapeHtml(a.color)}">
+        <i class="fas ${escapeHtml(a.icon)}"></i>
       </div>
       <div class="activity-info">
-        <p>${a.msg}</p>
-        <small>${a.time}</small>
+        <p>${escapeHtml(a.msg)}</p>
+        <small>${escapeHtml(a.time)}</small>
       </div>
     </div>
   `).join('');
@@ -250,32 +251,37 @@ function renderCoursesTable(courses = adminState.courses) {
   const tbody = document.getElementById('coursesTableBody');
   if (!tbody) return;
   if (!courses.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--gray2);padding:20px;text-align:center">Nenhum curso encontrado.</td></tr>'; return; }
-  tbody.innerHTML = courses.map(c => `
+  // IDs numéricos usados em onclick — garantir que são inteiros antes de interpolar
+  tbody.innerHTML = courses.map(c => {
+    const safeId = parseInt(c.id, 10);
+    const isFeatured = adminState.featured.includes(c.id);
+    return `
     <tr>
-      <td><img src="${c.thumb}" alt="${c.title}" class="table-thumb" onerror="this.src='https://via.placeholder.com/70x40/1e1e1e/666?text=Sem+Imagem'" /></td>
+      <td><img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" class="table-thumb" onerror="this.src='https://via.placeholder.com/70x40/1e1e1e/666?text=Sem+Imagem'" /></td>
       <td>
-        <div class="table-title">${c.title}</div>
-        <small style="color:var(--gray2);font-size:0.7rem">${c.instructor || 'Sem instrutor'}</small>
+        <div class="table-title">${escapeHtml(c.title)}</div>
+        <small style="color:var(--gray2);font-size:0.7rem">${escapeHtml(c.instructor || 'Sem instrutor')}</small>
       </td>
-      <td><span style="font-size:0.78rem;color:var(--gray)">${c.category}</span></td>
+      <td><span style="font-size:0.78rem;color:var(--gray)">${escapeHtml(c.category)}</span></td>
       <td>
-        <span class="status-badge ${adminState.featured.includes(c.id) ? 'status-featured' : 'status-active'}">
-          ${adminState.featured.includes(c.id) ? '<i class="fas fa-star"></i> Destaque' : '<i class="fas fa-circle"></i> Ativo'}
+        <span class="status-badge ${isFeatured ? 'status-featured' : 'status-active'}">
+          ${isFeatured ? '<i class="fas fa-star"></i> Destaque' : '<i class="fas fa-circle"></i> Ativo'}
         </span>
       </td>
-      <td style="font-size:0.8rem;color:var(--gray)">${c.lessons || 0} aulas</td>
-      <td><span style="color:#ffd700;font-size:0.8rem">★ ${c.rating}</span></td>
+      <td style="font-size:0.8rem;color:var(--gray)">${escapeHtml(String(c.lessons || 0))} aulas</td>
+      <td><span style="color:#ffd700;font-size:0.8rem">★ ${escapeHtml(String(c.rating))}</span></td>
       <td>
         <div class="table-actions">
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="openCourseModal(${c.id})" title="Editar"><i class="fas fa-pen"></i></button>
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="toggleFeatured(${c.id})" title="${adminState.featured.includes(c.id) ? 'Remover destaque' : 'Destacar'}">
-            <i class="fas fa-star" style="color:${adminState.featured.includes(c.id) ? '#ffd700' : 'inherit'}"></i>
+          <button class="btn btn-outline btn-icon-only btn-sm" onclick="openCourseModal(${safeId})" title="Editar"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-outline btn-icon-only btn-sm" onclick="toggleFeatured(${safeId})" title="${isFeatured ? 'Remover destaque' : 'Destacar'}">
+            <i class="fas fa-star" style="color:${isFeatured ? '#ffd700' : 'inherit'}"></i>
           </button>
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteCourse(${c.id})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteCourse(${safeId})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
         </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 let editingCourseId = null;
@@ -378,18 +384,21 @@ function renderFeaturedList() {
   const featured = adminState.featured.map(id => adminState.courses.find(c => c.id === id)).filter(Boolean);
   if (!featured.length) { list.innerHTML = '<p style="color:var(--gray2);font-size:0.82rem;padding:16px 0">Nenhum curso em destaque. Clique em "+ Adicionar" para selecionar.</p>'; return; }
 
-  list.innerHTML = featured.map((c, i) => `
-    <div class="sortable-item" data-id="${c.id}" draggable="true">
+  list.innerHTML = featured.map((c, i) => {
+    const safeId = parseInt(c.id, 10);
+    return `
+    <div class="sortable-item" data-id="${safeId}" draggable="true">
       <span class="drag-handle"><i class="fas fa-grip-vertical"></i></span>
-      <img src="${c.thumb}" alt="${c.title}" onerror="this.src='https://via.placeholder.com/60x34/1e1e1e/666'" />
+      <img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" onerror="this.src='https://via.placeholder.com/60x34/1e1e1e/666'" />
       <div class="sortable-item-info">
-        <strong>${c.title}</strong>
-        <span>${c.category} • ${c.lessons} aulas</span>
+        <strong>${escapeHtml(c.title)}</strong>
+        <span>${escapeHtml(c.category)} • ${escapeHtml(String(c.lessons))} aulas</span>
       </div>
       <span style="font-size:0.7rem;background:rgba(255,215,0,0.1);color:#ffd700;padding:2px 8px;border-radius:12px;font-weight:700">#${i+1}</span>
-      <button class="btn btn-outline btn-icon-only btn-sm" onclick="toggleFeatured(${c.id})" title="Remover" style="color:#e57373"><i class="fas fa-times"></i></button>
+      <button class="btn btn-outline btn-icon-only btn-sm" onclick="toggleFeatured(${safeId})" title="Remover" style="color:#e57373"><i class="fas fa-times"></i></button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   initDragSort(list);
 }
@@ -397,13 +406,16 @@ function renderFeaturedList() {
 function openFeaturedSelector() {
   const grid = document.getElementById('featuredSelectorGrid');
   if (!grid) return;
-  grid.innerHTML = adminState.courses.map(c => `
-    <div class="course-selector-item ${adminState.featured.includes(c.id) ? 'selected' : ''}" data-id="${c.id}" onclick="toggleSelectorItem(this, ${c.id})">
-      <img src="${c.thumb}" alt="${c.title}" onerror="this.src='https://via.placeholder.com/140x79/1e1e1e/666'" />
-      <span>${c.title}</span>
+  grid.innerHTML = adminState.courses.map(c => {
+    const safeId = parseInt(c.id, 10);
+    return `
+    <div class="course-selector-item ${adminState.featured.includes(c.id) ? 'selected' : ''}" data-id="${safeId}" onclick="toggleSelectorItem(this, ${safeId})">
+      <img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" onerror="this.src='https://via.placeholder.com/140x79/1e1e1e/666'" />
+      <span>${escapeHtml(c.title)}</span>
       <div class="check"><i class="fas fa-check"></i></div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   openModal('featuredSelectorModal');
 }
 
@@ -434,26 +446,30 @@ function renderTrails() {
   if (!container) return;
   container.innerHTML = adminState.trails.map(t => {
     const courses = t.courses.map(id => adminState.courses.find(c => c.id === id)).filter(Boolean);
+    const safeTrailId = parseInt(t.id, 10);
     return `
-      <div class="trail-card" data-trail-id="${t.id}">
+      <div class="trail-card" data-trail-id="${safeTrailId}">
         <div class="trail-card-header">
-          <span class="trail-color" style="background:${t.color}"></span>
-          <h4>${t.name}</h4>
+          <span class="trail-color" style="background:${escapeHtml(t.color)}"></span>
+          <h4>${escapeHtml(t.name)}</h4>
           <span style="font-size:0.72rem;color:var(--gray2)">${courses.length} curso${courses.length !== 1 ? 's' : ''}</span>
           <div style="display:flex;gap:6px;margin-left:auto">
-            <button class="btn btn-outline btn-icon-only btn-sm" onclick="openTrailModal(${t.id})" title="Editar"><i class="fas fa-pen"></i></button>
-            <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteTrail(${t.id})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-outline btn-icon-only btn-sm" onclick="openTrailModal(${safeTrailId})" title="Editar"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteTrail(${safeTrailId})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
           </div>
         </div>
         <div class="trail-card-body">
-          ${courses.map(c => `
+          ${courses.map(c => {
+            const safeCourseId = parseInt(c.id, 10);
+            return `
             <div class="trail-course-tag">
-              <img src="${c.thumb}" style="width:32px;height:18px;object-fit:cover;border-radius:3px" onerror="this.style.display='none'" />
-              <span style="font-size:0.78rem">${c.title}</span>
-              <button style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.7rem" onclick="removeCourseFromTrail(${t.id}, ${c.id})"><i class="fas fa-times"></i></button>
+              <img src="${escapeHtml(c.thumb)}" style="width:32px;height:18px;object-fit:cover;border-radius:3px" onerror="this.style.display='none'" />
+              <span style="font-size:0.78rem">${escapeHtml(c.title)}</span>
+              <button style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.7rem" onclick="removeCourseFromTrail(${safeTrailId}, ${safeCourseId})"><i class="fas fa-times"></i></button>
             </div>
-          `).join('')}
-          <button class="trail-add-btn" onclick="addCourseToTrail(${t.id})"><i class="fas fa-plus"></i> Adicionar curso</button>
+          `;
+          }).join('')}
+          <button class="trail-add-btn" onclick="addCourseToTrail(${safeTrailId})"><i class="fas fa-plus"></i> Adicionar curso</button>
         </div>
       </div>
     `;
@@ -473,13 +489,16 @@ function openTrailModal(id) {
   const grid = document.getElementById('trailCourseGrid');
   if (grid) {
     const selected = trail?.courses || [];
-    grid.innerHTML = adminState.courses.map(c => `
-      <div class="course-selector-item ${selected.includes(c.id) ? 'selected' : ''}" data-id="${c.id}" onclick="this.classList.toggle('selected')">
-        <img src="${c.thumb}" alt="${c.title}" onerror="this.src='https://via.placeholder.com/140x79/1e1e1e/666'" />
-        <span>${c.title}</span>
+    grid.innerHTML = adminState.courses.map(c => {
+      const safeId = parseInt(c.id, 10);
+      return `
+      <div class="course-selector-item ${selected.includes(c.id) ? 'selected' : ''}" data-id="${safeId}" onclick="this.classList.toggle('selected')">
+        <img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" onerror="this.src='https://via.placeholder.com/140x79/1e1e1e/666'" />
+        <span>${escapeHtml(c.title)}</span>
         <div class="check"><i class="fas fa-check"></i></div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
   openModal('trailModal');
 }
@@ -594,7 +613,7 @@ function updateSettingsPreview() {
   const name = getVal('settingName') || 'SkillFlix';
 
   const previewLogo = document.getElementById('previewLogo');
-  if (previewLogo) previewLogo.innerHTML = `${logoText}<span style="color:${color}">${logoSpan}</span>`;
+  if (previewLogo) previewLogo.innerHTML = `${escapeHtml(logoText)}<span style="color:${escapeHtml(color)}">${escapeHtml(logoSpan)}</span>`;
 
   const previewBtn = document.getElementById('previewBtn');
   if (previewBtn) previewBtn.style.background = color;
@@ -626,7 +645,11 @@ function showToast(msg, type = 'success') {
   if (!container) { container = document.createElement('div'); container.className = 'toast-container'; document.body.appendChild(container); }
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<i class="fas ${icons[type] || 'fa-circle-check'}"></i> ${msg}`;
+  // Ícone é um valor interno (não dado do usuário), msg é escapado para prevenir XSS
+  const iconEl = document.createElement('i');
+  iconEl.className = 'fas ' + (icons[type] || 'fa-circle-check');
+  toast.appendChild(iconEl);
+  toast.appendChild(document.createTextNode(' ' + msg));
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3200);
 }
