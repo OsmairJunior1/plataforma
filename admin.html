@@ -11,7 +11,7 @@
 <body>
 
 <!-- ===== LOGIN GATE OVERLAY ===== -->
-<div id="adminLoginGate" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0a;align-items:center;justify-content:center">
+<div id="adminLoginGate" style="display:flex;position:fixed;inset:0;z-index:9999;background:#0a0a0a;align-items:center;justify-content:center">
   <div style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:40px 36px;width:100%;max-width:380px">
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:1.9rem;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px">VGR<span style="color:#e50914">ACADEMY</span></div>
@@ -690,35 +690,40 @@
 
 <!-- ===== ADMIN AUTH GATE ===== -->
 <script>
+function releaseAdminPanel(name) {
+  document.getElementById('adminLoginGate').style.display = 'none';
+  document.body.style.overflow = '';
+  const nameEl = document.getElementById('adminSidebarName');
+  if (nameEl) nameEl.textContent = name || 'Administrador';
+}
+
+function lockAdminPanel() {
+  document.getElementById('adminLoginGate').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
 // Verifica sessão Supabase ativa ao carregar
 (async function () {
-  const showGate = () => {
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('adminLoginGate').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    });
-  };
-
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) { showGate(); return; }
+    if (!session) { lockAdminPanel(); return; }
 
     const { data: profile } = await supabaseClient
       .from('profiles').select('name, plan').eq('id', session.user.id).single();
 
     if (!profile || profile.plan !== 'admin') {
       await supabaseClient.auth.signOut();
-      showGate(); return;
+      lockAdminPanel(); return;
     }
 
-    // Sessão admin válida — libera o painel
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('adminLoginGate').style.display = 'none';
-      const nameEl = document.getElementById('adminSidebarName');
-      if (nameEl) nameEl.textContent = profile.name || session.user.email;
-    });
+    // Sessão admin válida — libera o painel imediatamente
+    releaseAdminPanel(profile.name || session.user.email);
+
+    // Sinaliza que auth passou; admin.js vai pegar esse flag e chamar loadStateFromSupabase
+    window.__adminAuthDone = true;
+    if (typeof loadStateFromSupabase === 'function') loadStateFromSupabase();
   } catch (e) {
-    showGate();
+    lockAdminPanel();
   }
 })();
 
@@ -763,10 +768,7 @@ async function doAdminLogin() {
     }
 
     // 3. Liberar painel
-    const nameEl = document.getElementById('adminSidebarName');
-    if (nameEl) nameEl.textContent = profile.name || email;
-    document.getElementById('adminLoginGate').style.display = 'none';
-    document.body.style.overflow = '';
+    releaseAdminPanel(profile.name || email);
 
     // 4. Recarregar dados do Supabase
     if (typeof loadStateFromSupabase === 'function') await loadStateFromSupabase();
