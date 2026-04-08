@@ -87,21 +87,27 @@ async function loadStateFromSupabase() {
 window.loadStateFromSupabase = loadStateFromSupabase;
 
 /* ---- NAVIGATION ---- */
-const navItems = document.querySelectorAll('.nav-item[data-panel]');
-const panels = document.querySelectorAll('.admin-panel');
+function switchPanel(targetId) {
+  document.querySelectorAll('.nav-item[data-panel]').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
 
-navItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const target = item.dataset.panel;
-    navItems.forEach(n => n.classList.remove('active'));
-    panels.forEach(p => p.classList.remove('active'));
-    item.classList.add('active');
-    document.getElementById(target)?.classList.add('active');
-    const title = item.querySelector('span')?.textContent || '';
-    document.getElementById('panelTitle').textContent = title;
-    // Close mobile sidebar
-    document.getElementById('adminSidebar')?.classList.remove('open');
-  });
+  const navItem = document.querySelector(`.nav-item[data-panel="${targetId}"]`);
+  const panel   = document.getElementById(targetId);
+
+  if (navItem) navItem.classList.add('active');
+  if (panel)   panel.classList.add('active');
+
+  const titleEl = document.getElementById('panelTitle');
+  if (titleEl && navItem) titleEl.textContent = navItem.querySelector('span')?.textContent || '';
+
+  document.getElementById('adminSidebar')?.classList.remove('open');
+}
+
+// Event delegation na sidebar — captura cliques em ícone, texto ou item inteiro
+document.querySelector('.sidebar-nav')?.addEventListener('click', (e) => {
+  const navItem = e.target.closest('.nav-item[data-panel]');
+  if (!navItem) return;
+  switchPanel(navItem.dataset.panel);
 });
 
 // Hamburger
