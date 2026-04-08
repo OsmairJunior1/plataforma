@@ -232,18 +232,23 @@ document.querySelectorAll('.carousel-btn').forEach(btn => {
 function createCourseCard(course, opts = {}) {
   const { showProgress = false, showTop10 = false, index = 0 } = opts;
   const card = document.createElement('div');
-  card.className = 'course-card' + (showTop10 ? ' top10-card' : '');
+
+  // Verificar se o curso é premium e o usuário é free
+  const userPlan    = window.CURRENT_USER?.plan || 'free';
+  const isLocked    = course.planRequired === 'premium' && userPlan === 'free';
+
+  card.className = 'course-card' + (showTop10 ? ' top10-card' : '') + (isLocked ? ' card-locked' : '');
   card.dataset.id = course.id;
 
   // Whitelist de badges válidos para evitar injeção de classe CSS arbitrária
   const VALID_BADGES = { new: 'Novo', hot: '🔥 Hot', free: 'Grátis', top: '⭐ Top' };
-  const badgeHTML = course.badge && VALID_BADGES[course.badge]
+  const badgeHTML = !isLocked && course.badge && VALID_BADGES[course.badge]
     ? `<span class="card-badge badge-${escapeHtml(course.badge)}">${VALID_BADGES[course.badge]}</span>`
     : '';
 
   // Garantir que progress seja um número entre 0-100
   const safeProgress = Math.min(100, Math.max(0, Number(course.progress) || 0));
-  const progressHTML = showProgress && safeProgress > 0
+  const progressHTML = !isLocked && showProgress && safeProgress > 0
     ? `<div class="card-progress"><div class="card-progress-fill" style="width:${safeProgress}%"></div></div>`
     : '';
 
@@ -253,14 +258,34 @@ function createCourseCard(course, opts = {}) {
 
   const inList = MY_LIST.includes(course.id);
 
+  // Overlay de cadeado para cursos premium
+  const lockHTML = isLocked ? `
+    <div class="card-lock-overlay">
+      <div class="card-lock-icon"><i class="fas fa-lock"></i></div>
+      <span class="card-lock-label">PREMIUM</span>
+    </div>` : '';
+
+  // Ações: se bloqueado, não mostra botão de play
+  const actionsHTML = isLocked
+    ? `<button class="card-btn card-btn-premium" data-action="upgrade" title="Ver planos">
+         <i class="fas fa-crown"></i> Assinar Premium
+       </button>`
+    : `<button class="card-btn play-small" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
+       <button class="card-btn btn-addlist" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}">
+         <i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i>
+       </button>
+       <button class="card-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>
+       <span style="margin-left:auto;font-size:0.7rem;color:var(--gray)">${escapeHtml(course.duration)}</span>`;
+
   // Todos os dados de curso passam por escapeHtml() antes de innerHTML
   card.innerHTML = `
     <div class="card-thumb">
       <img src="${escapeHtml(course.thumb)}" alt="${escapeHtml(course.title)}" loading="lazy" />
-      <div class="card-play-btn"><i class="fas fa-play"></i></div>
+      ${isLocked ? '' : '<div class="card-play-btn"><i class="fas fa-play"></i></div>'}
       <div class="card-badges">${badgeHTML}</div>
       ${top10HTML}
       ${progressHTML}
+      ${lockHTML}
     </div>
     <div class="card-body">
       <div class="card-title">${escapeHtml(course.title)}</div>
@@ -272,20 +297,18 @@ function createCourseCard(course, opts = {}) {
     </div>
     <div class="card-expanded">
       <p>${escapeHtml(course.desc)}</p>
-      <div class="card-actions">
-        <button class="card-btn play-small" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
-        <button class="card-btn btn-addlist" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}">
-          <i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i>
-        </button>
-        <button class="card-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>
-        <span style="margin-left:auto;font-size:0.7rem;color:var(--gray)">${escapeHtml(course.duration)}</span>
-      </div>
+      <div class="card-actions">${actionsHTML}</div>
     </div>
   `;
 
   // Card actions
   card.addEventListener('click', (e) => {
     const action = e.target.closest('[data-action]')?.dataset.action;
+    if (isLocked) {
+      // Curso bloqueado — mostrar mensagem de upgrade
+      showToast('🔒 Este curso é exclusivo para assinantes Premium. Em breve disponível!', 'info');
+      return;
+    }
     if (action === 'play') {
       window.location.href = `curso.html?id=${course.id}`;
     } else if (action === 'list') {
