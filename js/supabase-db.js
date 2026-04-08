@@ -87,9 +87,10 @@ const SupabaseDB = {
         hero:        course.hero       || '',
         badge:       course.badge      || '',
         tags:        course.tags       || [],
-        active:      course.active !== false,
-        featured:    course.featured   || false,
-        sort_order:  course.sort_order || 0,
+        active:        course.active !== false,
+        featured:      course.featured      || false,
+        sort_order:    course.sort_order    || 0,
+        plan_required: course.planRequired  || 'free',
         updated_at:  new Date().toISOString(),
       };
       // Se tem ID numérico real (não gerado localmente), faz upsert
@@ -204,10 +205,11 @@ const SupabaseDB = {
       hero:       row.hero,
       badge:      row.badge,
       tags:       row.tags || [],
-      active:     row.active,
-      featured:   row.featured,
-      sort_order: row.sort_order,
-      progress:   0,
+      active:       row.active,
+      featured:     row.featured,
+      sort_order:   row.sort_order,
+      planRequired: row.plan_required || 'free',
+      progress:     0,
     };
   },
 };
