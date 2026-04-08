@@ -32,9 +32,6 @@
             class="btn btn-red" style="width:100%;padding:13px;font-size:0.95rem;justify-content:center">
       <i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar
     </button>
-    <p style="text-align:center;font-size:0.73rem;color:rgba(255,255,255,0.25);margin-top:18px">
-      Credenciais padrão: admin@vgracademy.com.br / admin123
-    </p>
   </div>
 </div>
 
@@ -742,12 +739,27 @@ async function doAdminLogin() {
     if (error) throw new Error('E-mail ou senha incorretos.');
 
     // 2. Verificar plano admin
-    const { data: profile, error: pErr } = await supabaseClient
+    let { data: profile, error: pErr } = await supabaseClient
       .from('profiles').select('name, plan').eq('id', data.user.id).single();
-    if (pErr || !profile) throw new Error('Perfil não encontrado. Execute o schema SQL no Supabase.');
+
+    // Se perfil não existe, criar automaticamente (ex: cadastro antes do schema)
+    if (pErr || !profile) {
+      const userName = data.user.user_metadata?.name || data.user.email.split('@')[0];
+      const { data: newProfile, error: insertErr } = await supabaseClient
+        .from('profiles')
+        .insert({ id: data.user.id, name: userName, plan: 'free' })
+        .select('name, plan')
+        .single();
+      if (insertErr || !newProfile) {
+        await supabaseClient.auth.signOut();
+        throw new Error('Não foi possível criar o perfil. Verifique se o schema SQL foi executado no Supabase.');
+      }
+      profile = newProfile;
+    }
+
     if (profile.plan !== 'admin') {
       await supabaseClient.auth.signOut();
-      throw new Error('Acesso negado. Esta conta não tem permissão de administrador.');
+      throw new Error('Acesso negado. Esta conta não tem permissão de administrador. Peça ao suporte para elevar sua conta a admin.');
     }
 
     // 3. Liberar painel
