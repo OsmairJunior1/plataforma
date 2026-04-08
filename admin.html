@@ -693,6 +693,7 @@
 function releaseAdminPanel(name) {
   document.getElementById('adminLoginGate').style.display = 'none';
   document.body.style.overflow = '';
+  document.body.style.visibility = 'visible';
   const nameEl = document.getElementById('adminSidebarName');
   if (nameEl) nameEl.textContent = name || 'Administrador';
 }
@@ -700,6 +701,7 @@ function releaseAdminPanel(name) {
 function lockAdminPanel() {
   document.getElementById('adminLoginGate').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  document.body.style.visibility = 'visible';
 }
 
 // Verifica sessão Supabase ativa ao carregar
@@ -743,28 +745,32 @@ async function doAdminLogin() {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
     if (error) throw new Error('E-mail ou senha incorretos.');
 
-    // 2. Verificar plano admin
+    // 2. Buscar perfil
     let { data: profile, error: pErr } = await supabaseClient
       .from('profiles').select('name, plan').eq('id', data.user.id).single();
 
-    // Se perfil não existe, criar automaticamente (ex: cadastro antes do schema)
-    if (pErr || !profile) {
+    // PGRST116 = nenhuma linha encontrada — perfil ainda não existe, criar agora
+    if (pErr?.code === 'PGRST116' || (!profile && !pErr)) {
       const userName = data.user.user_metadata?.name || data.user.email.split('@')[0];
       const { data: newProfile, error: insertErr } = await supabaseClient
         .from('profiles')
         .insert({ id: data.user.id, name: userName, plan: 'free' })
         .select('name, plan')
         .single();
-      if (insertErr || !newProfile) {
+      if (insertErr) {
         await supabaseClient.auth.signOut();
-        throw new Error('Não foi possível criar o perfil. Verifique se o schema SQL foi executado no Supabase.');
+        throw new Error('Erro ao criar perfil: ' + insertErr.message);
       }
       profile = newProfile;
+    } else if (pErr) {
+      // Outro erro de banco (rede, RLS, etc.)
+      await supabaseClient.auth.signOut();
+      throw new Error('Erro ao verificar perfil: ' + pErr.message);
     }
 
-    if (profile.plan !== 'admin') {
+    if (!profile || profile.plan !== 'admin') {
       await supabaseClient.auth.signOut();
-      throw new Error('Acesso negado. Esta conta não tem permissão de administrador. Peça ao suporte para elevar sua conta a admin.');
+      throw new Error('Acesso negado. Esta conta não tem permissão de administrador.');
     }
 
     // 3. Liberar painel
