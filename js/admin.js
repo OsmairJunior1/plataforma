@@ -421,6 +421,7 @@ function openCourseModal(id) {
   setVal('courseRating', course?.rating || '4.8');
   setVal('courseLevel', course?.level || 'Iniciante');
   setVal('courseBadge', course?.badge || '');
+  setVal('coursePlanRequired', course?.planRequired || 'free');
   setVal('courseDesc', course?.desc || '');
   setVal('courseInstructor', course?.instructor || '');
   setVal('courseThumbUrl', course?.thumb || '');
@@ -444,6 +445,7 @@ function saveCourse() {
     rating: parseFloat(getVal('courseRating')) || 4.8,
     level: getVal('courseLevel'),
     badge: getVal('courseBadge'),
+    planRequired: getVal('coursePlanRequired') || 'free',
     desc: getVal('courseDesc'),
     instructor: getVal('courseInstructor'),
     thumb: getVal('courseThumbUrl'),
