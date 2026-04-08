@@ -118,8 +118,9 @@ initFeaturedPanel();
 initTrailsPanel();
 initSettingsPanel();
 
-// Carrega dados do Supabase em segundo plano (atualiza painéis quando chegar)
-loadStateFromSupabase();
+// Se a auth já foi confirmada pelo gate ANTES deste script carregar, carrega agora.
+// Se a auth ainda não resolveu, o gate vai chamar loadStateFromSupabase() quando resolver.
+if (window.__adminAuthDone) loadStateFromSupabase();
 
 // =====================================================
 //  DASHBOARD
