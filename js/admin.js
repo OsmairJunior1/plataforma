@@ -71,6 +71,7 @@ document.getElementById('hamburgerAdmin')?.addEventListener('click', () => {
 
 /* ---- INIT ALL PANELS ---- */
 initDashboard();
+initLandingPanel();
 initHeroPanel();
 initCoursesPanel();
 initFeaturedPanel();
@@ -110,6 +111,78 @@ function renderActivity() {
 function logActivity(msg, icon = 'fa-circle', color = 'var(--blue)') {
   adminState.activity.push({ msg, icon, color, time: new Date().toLocaleString('pt-BR') });
   renderActivity();
+}
+
+// =====================================================
+//  LANDING PAGE PANEL
+// =====================================================
+function initLandingPanel() {
+  const p = DB.getPlatform();
+  setVal('landingMediaType', p.landingVideoType || 'video');
+  setVal('landingMediaUrl',  p.landingVideoUrl  || '');
+  setVal('landingPosterUrl', p.landingVideoPoster || '');
+
+  toggleLandingFields();
+  updateLandingPreview();
+
+  document.getElementById('landingMediaType')?.addEventListener('change', () => {
+    toggleLandingFields();
+    updateLandingPreview();
+  });
+  document.getElementById('landingMediaUrl')?.addEventListener('change', updateLandingPreview);
+  document.getElementById('landingPosterUrl')?.addEventListener('change', updateLandingPreview);
+
+  document.getElementById('landingFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setVal('landingMediaUrl', url);
+    updateLandingPreview();
+    showToast(`Arquivo carregado: ${file.name}`, 'info');
+  });
+
+  document.getElementById('btnSaveLanding')?.addEventListener('click', () => {
+    const type   = getVal('landingMediaType');
+    const url    = getVal('landingMediaUrl');
+    const poster = getVal('landingPosterUrl');
+    DB.savePlatform({ landingVideoType: type, landingVideoUrl: url, landingVideoPoster: poster });
+    updateLandingPreview();
+    logActivity('Vídeo da landing atualizado', 'fa-globe', '#00d4aa');
+    showToast('Landing salva com sucesso!', 'success');
+  });
+}
+
+function toggleLandingFields() {
+  const type = getVal('landingMediaType');
+  const pg = document.getElementById('landingPosterGroup');
+  if (pg) pg.style.display = type === 'video' ? '' : 'none';
+}
+
+function updateLandingPreview() {
+  const type   = getVal('landingMediaType');
+  const url    = getVal('landingMediaUrl');
+  const poster = getVal('landingPosterUrl');
+  const video  = document.getElementById('landingPreviewVideo');
+  const img    = document.getElementById('landingPreviewImg');
+  const badge  = document.getElementById('landingVideoBadge');
+
+  if (type === 'video') {
+    if (video) {
+      video.style.display = '';
+      video.poster = poster || '';
+      if (url && video.getAttribute('data-src') !== url) {
+        video.setAttribute('data-src', url);
+        video.src = url;
+        video.load();
+      }
+    }
+    if (img) img.style.display = 'none';
+    if (badge) badge.style.display = 'flex';
+  } else {
+    if (video) { video.style.display = 'none'; video.src = ''; }
+    if (img) { img.style.display = ''; img.src = url || poster || ''; }
+    if (badge) badge.style.display = 'none';
+  }
 }
 
 // =====================================================
