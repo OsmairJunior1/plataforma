@@ -10,6 +10,34 @@
 </head>
 <body>
 
+<!-- ===== LOGIN GATE OVERLAY ===== -->
+<div id="adminLoginGate" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0a;align-items:center;justify-content:center">
+  <div style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:40px 36px;width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:1.9rem;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px">VGR<span style="color:#e50914">ACADEMY</span></div>
+      <p style="font-size:0.82rem;color:rgba(255,255,255,0.4)"><i class="fas fa-shield-halved" style="margin-right:5px;color:#e50914"></i>Acesso Restrito — Administrador</p>
+    </div>
+    <div id="adminLoginMsg" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.83rem;font-weight:500;background:rgba(229,9,20,0.12);border:1px solid rgba(229,9,20,0.35);color:#e57373"></div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:0.78rem;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px">E-mail</label>
+      <input type="email" id="adminEmail" class="form-input" placeholder="admin@vgracademy.com.br" style="width:100%;box-sizing:border-box" />
+    </div>
+    <div style="margin-bottom:22px">
+      <label style="font-size:0.78rem;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px">Senha</label>
+      <input type="password" id="adminPass" class="form-input" placeholder="••••••••"
+             style="width:100%;box-sizing:border-box"
+             onkeydown="if(event.key==='Enter') doAdminLogin()" />
+    </div>
+    <button id="adminLoginBtn" onclick="doAdminLogin()"
+            class="btn btn-red" style="width:100%;padding:13px;font-size:0.95rem;justify-content:center">
+      <i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar
+    </button>
+    <p style="text-align:center;font-size:0.73rem;color:rgba(255,255,255,0.25);margin-top:18px">
+      Credenciais padrão: admin@vgracademy.com.br / admin123
+    </p>
+  </div>
+</div>
+
 <div class="admin-layout">
 
   <!-- ===================== SIDEBAR ===================== -->
@@ -58,9 +86,14 @@
       <div class="sidebar-user">
         <img src="https://ui-avatars.com/api/?name=Admin&background=e50914&color=fff&size=40" alt="Admin" />
         <div class="sidebar-user-info">
-          <strong>Administrador</strong>
+          <strong id="adminSidebarName">Administrador</strong>
           <small>● Online</small>
         </div>
+        <button onclick="adminLogout()" title="Sair"
+          style="background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;padding:4px;margin-left:auto;font-size:0.85rem"
+          onmouseenter="this.style.color='#e57373'" onmouseleave="this.style.color='rgba(255,255,255,0.35)'">
+          <i class="fas fa-right-from-bracket"></i>
+        </button>
       </div>
     </div>
   </aside>
@@ -653,10 +686,99 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/data.js"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
 <script src="js/db.js"></script>
-<script src="js/auth.js"></script>
+<script src="js/supabase-db.js"></script>
+
+<!-- ===== ADMIN AUTH GATE ===== -->
+<script>
+// Verifica sessão Supabase ativa ao carregar
+(async function () {
+  const showGate = () => {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('adminLoginGate').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+  };
+
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { showGate(); return; }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles').select('name, plan').eq('id', session.user.id).single();
+
+    if (!profile || profile.plan !== 'admin') {
+      await supabaseClient.auth.signOut();
+      showGate(); return;
+    }
+
+    // Sessão admin válida — libera o painel
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('adminLoginGate').style.display = 'none';
+      const nameEl = document.getElementById('adminSidebarName');
+      if (nameEl) nameEl.textContent = profile.name || session.user.email;
+    });
+  } catch (e) {
+    showGate();
+  }
+})();
+
+async function doAdminLogin() {
+  const email = (document.getElementById('adminEmail')?.value || '').trim();
+  const pass  =  document.getElementById('adminPass')?.value || '';
+  const btn   =  document.getElementById('adminLoginBtn');
+
+  document.getElementById('adminLoginMsg').style.display = 'none';
+  if (!email || !pass) { showAdminMsg('Preencha e-mail e senha.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Verificando...';
+
+  try {
+    // 1. Autenticar no Supabase
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+    if (error) throw new Error('E-mail ou senha incorretos.');
+
+    // 2. Verificar plano admin
+    const { data: profile, error: pErr } = await supabaseClient
+      .from('profiles').select('name, plan').eq('id', data.user.id).single();
+    if (pErr || !profile) throw new Error('Perfil não encontrado. Execute o schema SQL no Supabase.');
+    if (profile.plan !== 'admin') {
+      await supabaseClient.auth.signOut();
+      throw new Error('Acesso negado. Esta conta não tem permissão de administrador.');
+    }
+
+    // 3. Liberar painel
+    const nameEl = document.getElementById('adminSidebarName');
+    if (nameEl) nameEl.textContent = profile.name || email;
+    document.getElementById('adminLoginGate').style.display = 'none';
+    document.body.style.overflow = '';
+
+    // 4. Recarregar dados do Supabase
+    if (typeof loadStateFromSupabase === 'function') await loadStateFromSupabase();
+
+  } catch (e) {
+    showAdminMsg(e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar';
+  }
+}
+
+function showAdminMsg(text) {
+  const el = document.getElementById('adminLoginMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+async function adminLogout() {
+  await supabaseClient.auth.signOut();
+  location.reload();
+}
+</script>
+
 <script src="js/admin.js"></script>
 </body>
 </html>
