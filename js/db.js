@@ -103,7 +103,7 @@ const ADMIN_PASSWORD_HASH = '459c43caac68389a22d43fa1857011847c3e1a43589ea5c6a9a
 
 const DB_DEFAULTS = {
   version: 3,
-  platform: { name: 'VGR Academy', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'VGR', logoSpan: 'ACADEMY' },
+  platform: { name: 'VGR Academy', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'VGR', logoSpan: 'ACADEMY', landingVideoType: 'video', landingVideoUrl: 'Hoje nossa reuni%C3%A3o no BNI foi marcada por conex%C3%B5es poderosas e muita gera%C3%A7%C3%A3o de neg%C3%B3cios.Tivemos.mp4', landingVideoPoster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&q=80' },
   banners: [
     {
       id: 1, active: true, order: 0,
@@ -236,7 +236,7 @@ function DB_update(fn) { const db = DB_get(); fn(db); DB_save(db); return db; }
 
 // ---- PLATFORM ----
 const DB = {
-  getPlatform: () => DB_get().platform,
+  getPlatform: () => ({ ...DB_DEFAULTS.platform, ...DB_get().platform }),
   savePlatform: (p) => DB_update(db => db.platform = { ...db.platform, ...p }),
 
   // ---- BANNERS ----
