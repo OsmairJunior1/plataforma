@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VGR Academy — Sua Plataforma de Cursos</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-left">
+      <a href="home.html" class="logo" id="siteLogo">VGR<span>ACADEMY</span></a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="home.html" class="active">Início</a></li>
+        <li><a href="#categorias">Categorias</a></li>
+        <li><a href="meus-cursos.html">Meus Cursos</a></li>
+        <li><a href="#novidades">Novidades</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <button class="btn-search" id="searchToggle"><i class="fas fa-search"></i></button>
+      <div class="search-bar" id="searchBar">
+        <input type="text" placeholder="Buscar cursos..." id="searchInput" />
+        <button class="close-search" id="closeSearch"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="notification-bell">
+        <i class="fas fa-bell"></i>
+        <span class="badge">3</span>
+      </div>
+      <div class="user-menu" id="userMenu">
+        <div class="avatar">
+          <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=40" alt="Avatar" />
+          <i class="fas fa-caret-down"></i>
+        </div>
+        <div class="dropdown" id="dropdown">
+          <a href="perfil.html"><i class="fas fa-user"></i> Meu Perfil</a>
+          <a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a>
+          <a href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a>
+          <div class="divider"></div>
+          <a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="home.html"><i class="fas fa-home"></i> Início</a></li>
+      <li><a href="#categorias"><i class="fas fa-th-large"></i> Categorias</a></li>
+      <li><a href="meus-cursos.html"><i class="fas fa-play-circle"></i> Meus Cursos</a></li>
+      <li><a href="#novidades"><i class="fas fa-fire"></i> Novidades</a></li>
+      <li><a href="perfil.html"><i class="fas fa-user"></i> Perfil</a></li>
+      <li><a href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+      <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+    </ul>
+  </div>
+
+  <!-- HERO BANNER -->
+  <section class="hero" id="hero">
+    <div class="hero-bg" id="heroBg">
+      <!-- mídia injetada via JS do painel -->
+      <div class="hero-overlay"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge" id="heroBadgeEl"><i class="fas fa-fire"></i> <span id="heroBadgeText">Em Destaque</span></div>
+      <h1 class="hero-title" id="heroTitleEl">Carregando...</h1>
+      <p class="hero-desc" id="heroDescEl"></p>
+      <div class="hero-meta" id="heroMetaEl"></div>
+      <div class="hero-actions">
+        <a href="curso.html?id=1" class="btn-primary" id="heroWatchBtn"><i class="fas fa-play"></i> Assistir Agora</a>
+        <button class="btn-secondary" id="heroDetailsBtn"><i class="fas fa-info-circle"></i> Mais Detalhes</button>
+        <button class="btn-icon" title="Adicionar à lista"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+    <div class="hero-scroll-indicator">
+      <i class="fas fa-chevron-down"></i>
+    </div>
+  </section>
+
+  <!-- PROGRESS BANNER -->
+  <section class="continue-watching-banner">
+    <div class="container">
+      <div class="progress-card-featured">
+        <div class="progress-card-featured-thumb">
+          <img src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&q=80" alt="Curso" />
+          <div class="play-overlay"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="progress-card-featured-info">
+          <p class="progress-label"><i class="fas fa-history"></i> Continue de onde parou</p>
+          <h3>Aula 2: Ser interessante antes de interesseiro</h3>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar"><div class="progress-fill" style="width:62%"></div></div>
+            <span>62% concluído</span>
+          </div>
+          <a href="curso.html?id=2&aula=7" class="btn-continue"><i class="fas fa-play"></i> Continuar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- SECTION: CONTINUE WATCHING -->
+    <section class="section">
+      <div class="section-header">
+        <h2><i class="fas fa-history"></i> Continuar Assistindo</h2>
+        <a href="meus-cursos.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="continue"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="continue">
+          <!-- Cards gerados via JS -->
+        </div>
+        <button class="carousel-btn next" data-target="continue"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- SECTION: POPULAR -->
+    <section class="section">
+      <div class="section-header">
+        <h2><i class="fas fa-fire"></i> Mais Populares</h2>
+        <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="popular"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="popular"></div>
+        <button class="carousel-btn next" data-target="popular"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- SECTION: CATEGORIES -->
+    <section class="section" id="categorias">
+      <div class="section-header">
+        <h2><i class="fas fa-th-large"></i> Explorar por Categoria</h2>
+      </div>
+      <div class="categories-grid">
+        <div class="category-card" style="--clr:#e50914" data-filter="marketing">
+          <i class="fas fa-bullhorn"></i>
+          <span>Marketing</span>
+          <small>12 cursos</small>
+        </div>
+        <div class="category-card" style="--clr:#f5a623" data-filter="negocios">
+          <i class="fas fa-briefcase"></i>
+          <span>Negócios</span>
+          <small>8 cursos</small>
+        </div>
+        <div class="category-card" style="--clr:#00d4aa" data-filter="tecnologia">
+          <i class="fas fa-code"></i>
+          <span>Tecnologia</span>
+          <small>15 cursos</small>
+        </div>
+        <div class="category-card" style="--clr:#7c5cbf" data-filter="design">
+          <i class="fas fa-palette"></i>
+          <span>Design</span>
+          <small>10 cursos</small>
+        </div>
+        <div class="category-card" style="--clr:#ff6b35" data-filter="financas">
+          <i class="fas fa-chart-line"></i>
+          <span>Finanças</span>
+          <small>6 cursos</small>
+        </div>
+        <div class="category-card" style="--clr:#2196f3" data-filter="vendas">
+          <i class="fas fa-handshake"></i>
+          <span>Vendas</span>
+          <small>9 cursos</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: NEW RELEASES -->
+    <section class="section" id="novidades">
+      <div class="section-header">
+        <h2><i class="fas fa-sparkles"></i> Lançamentos</h2>
+        <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="new"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="new"></div>
+        <button class="carousel-btn next" data-target="new"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- TOP 10 -->
+    <section class="section">
+      <div class="section-header">
+        <h2><i class="fas fa-trophy"></i> Top 10 da Semana</h2>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="top10"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="top10"></div>
+        <button class="carousel-btn next" data-target="top10"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- SECTION: MY LIST -->
+    <section class="section">
+      <div class="section-header">
+        <h2><i class="fas fa-bookmark"></i> Minha Lista</h2>
+        <a href="minha-lista.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="mylist"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="mylist"></div>
+        <button class="carousel-btn next" data-target="mylist"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">VGR<span>ACADEMY</span></div>
+      <div class="footer-links">
+        <a href="#">Sobre</a>
+        <a href="#">Termos de Uso</a>
+        <a href="#">Privacidade</a>
+        <a href="#">Ajuda</a>
+        <a href="#">Contato</a>
+      </div>
+      <p class="footer-copy">© 2026 VGR Academy. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- COURSE MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+      <div class="modal-hero">
+        <img src="" alt="" id="modalImg" />
+        <div class="modal-hero-overlay"></div>
+        <div class="modal-hero-content">
+          <h2 id="modalTitle"></h2>
+          <div class="modal-actions">
+            <a href="#" class="btn-primary btn-sm" id="modalWatch"><i class="fas fa-play"></i> Assistir</a>
+            <button class="btn-secondary btn-sm" id="modalList"><i class="fas fa-plus"></i> Minha Lista</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <p id="modalDesc"></p>
+          <div class="modal-tags" id="modalTags"></div>
+        </div>
+        <div class="modal-stats">
+          <div><strong id="modalLessons"></strong><small>Aulas</small></div>
+          <div><strong id="modalDuration"></strong><small>Duração</small></div>
+          <div><strong id="modalRating"></strong><small>Avaliação</small></div>
+          <div><strong id="modalLevel"></strong><small>Nível</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
