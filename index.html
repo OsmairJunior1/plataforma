@@ -236,16 +236,15 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/supabase-db.js"></script>
   <script>
-    // ---- Injetar mídia do hero da landing ----
-    (function () {
-      const platform = DB.getPlatform();
+    function injectLandingMedia(url, poster, type) {
       const container = document.getElementById('landingHeroBg');
       if (!container) return;
-      const url    = platform.landingVideoUrl   || '';
-      const poster = platform.landingVideoPoster || '';
-      const type   = platform.landingVideoType  || 'video';
+      container.innerHTML = '';
       if (type === 'video' && url) {
         const v = document.createElement('video');
         v.autoplay = true; v.muted = true; v.loop = true;
@@ -257,10 +256,28 @@
         container.appendChild(v);
       } else {
         const img = document.createElement('img');
-        img.src = url || poster;
+        img.src = url || poster || '';
         img.alt = 'Hero';
         container.appendChild(img);
       }
+    }
+
+    // 1. Aplica imediatamente do cache local
+    (function () {
+      const platform = DB.getPlatform();
+      injectLandingMedia(platform.landingVideoUrl, platform.landingVideoPoster, platform.landingVideoType || 'video');
+    })();
+
+    // 2. Atualiza com dados do Supabase em segundo plano
+    (async function () {
+      try {
+        const row = await SupabaseDB.getSettings();
+        if (!row) return;
+        const url    = row.landing_video_url    || '';
+        const poster = row.landing_video_poster || '';
+        const type   = row.landing_video_type   || 'video';
+        if (url) injectLandingMedia(url, poster, type);
+      } catch(e) { /* usa cache local */ }
     })();
   </script>
   <script>
