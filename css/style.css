@@ -1355,3 +1355,371 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   .course-card { min-width: 130px; max-width: 130px; }
   .categories-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ============================================================
+   POSTER CARDS — 2:3 portrait layout (Netflix-style)
+   ============================================================ */
+:root {
+  --poster-w: 180px;
+  --poster-radius: 8px;
+  --poster-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.poster-card {
+  position: relative;
+  flex: 0 0 var(--poster-w);
+  width: var(--poster-w);
+  border-radius: var(--poster-radius);
+  overflow: visible;
+  cursor: pointer;
+  transition: transform 0.35s var(--poster-ease), box-shadow 0.35s var(--poster-ease);
+  background: var(--bg3);
+  user-select: none;
+}
+
+.poster-card:hover {
+  transform: scale(1.07) translateY(-6px);
+  z-index: 50;
+  box-shadow: 0 20px 56px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.07);
+}
+
+/* ---- thumbnail wrapper ---- */
+.poster-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--poster-radius);
+  background: var(--bg4);
+}
+
+.poster-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
+  display: block;
+  transition: transform 0.45s var(--poster-ease);
+}
+.poster-card:hover .poster-thumb img { transform: scale(1.06); }
+
+/* ---- bottom gradient overlay ---- */
+.poster-gradient {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--poster-radius);
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.96) 0%,
+    rgba(0,0,0,0.55) 35%,
+    rgba(0,0,0,0.1)  60%,
+    transparent      100%
+  );
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.poster-card:hover .poster-gradient { opacity: 0.88; }
+
+/* ---- play button (center) ---- */
+.poster-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(229, 9, 20, 0.92);
+  box-shadow: 0 4px 24px rgba(229, 9, 20, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 1.05rem;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s var(--poster-ease);
+  pointer-events: none;
+  z-index: 4;
+}
+.poster-card:hover .poster-play {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ---- info bar (always visible) ---- */
+.poster-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 10px 10px 42px;
+  z-index: 3;
+  pointer-events: none;
+}
+.poster-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--white);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.poster-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.63rem;
+  color: rgba(255,255,255,0.6);
+  flex-wrap: wrap;
+}
+.poster-meta .p-star { color: #ffd700; font-size: 0.6rem; }
+.poster-meta .p-sep { color: rgba(255,255,255,0.25); }
+
+/* ---- action bar — slides up from bottom ---- */
+.poster-actions {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 38px;
+  background: rgba(18,18,18,0.96);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0 0 var(--poster-radius) var(--poster-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transform: translateY(100%);
+  transition: transform 0.28s var(--poster-ease);
+  z-index: 5;
+  overflow: hidden;
+}
+.poster-card:hover .poster-actions { transform: translateY(0); }
+
+.poster-actions .pa-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  font-size: 0.65rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  flex-shrink: 0;
+}
+.poster-actions .pa-btn:hover { background: rgba(255,255,255,0.22); transform: scale(1.1); }
+.poster-actions .pa-btn-play { background: var(--red); border-color: var(--red); }
+.poster-actions .pa-btn-play:hover { background: var(--red-hover); }
+
+/* ---- badge (top-left) ---- */
+.poster-badge {
+  position: absolute;
+  top: 8px; left: 8px;
+  z-index: 6;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 3px 7px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.poster-badge.badge-hot  { background: var(--red); color: #fff; }
+.poster-badge.badge-new  { background: #00c853; color: #fff; }
+.poster-badge.badge-top  { background: #ffd700; color: #000; }
+.poster-badge.badge-free { background: #2196f3; color: #fff; }
+
+/* ---- Top-10 rank number ---- */
+.poster-rank {
+  position: absolute;
+  bottom: 34px;
+  left: -8px;
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 2.5px rgba(255,255,255,0.22);
+  pointer-events: none;
+  z-index: 3;
+  font-style: italic;
+  transition: -webkit-text-stroke-color 0.3s ease;
+}
+.poster-card:hover .poster-rank { -webkit-text-stroke-color: rgba(229,9,20,0.55); }
+
+/* ---- premium lock ---- */
+.poster-card.card-locked .poster-thumb img { filter: brightness(0.35); }
+.poster-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 4;
+  pointer-events: none;
+}
+.poster-lock i    { font-size: 1.4rem; color: #ffd700; }
+.poster-lock span { font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; color: #ffd700; }
+
+/* ============================================================
+   FEATURED GRID — right after hero
+   ============================================================ */
+.featured-section {
+  padding: 0 4% 0;
+  margin-top: -72px;
+  position: relative;
+  z-index: 10;
+}
+
+.featured-section .section-header {
+  margin-bottom: 20px;
+  padding-bottom: 0;
+  border: none;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--poster-w), 1fr));
+  gap: 14px;
+}
+
+/* First card is bigger — hero card */
+.featured-grid .poster-card:first-child {
+  grid-row: span 2;
+}
+.featured-grid .poster-card:first-child .poster-title { font-size: 0.9rem; }
+.featured-grid .poster-card:first-child .poster-rank  { font-size: 7rem; }
+
+/* ============================================================
+   POSTER CAROUSELS — horizontal scroll rows
+   ============================================================ */
+.poster-carousel-row .carousel {
+  gap: 12px;
+  padding-bottom: 54px; /* space for action bar slide-out */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.poster-carousel-row .carousel::-webkit-scrollbar { display: none; }
+
+/* Carousel height adapts to poster cards */
+.poster-carousel-row .carousel-wrap {
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+/* ============================================================
+   SECTION HEADERS — enhanced
+   ============================================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.section-header h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-header h2 i {
+  color: var(--red);
+  font-size: 0.9rem;
+}
+.section-header .see-all {
+  font-size: 0.78rem;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.section-header .see-all:hover { color: var(--white); }
+
+/* ============================================================
+   CATEGORY CARDS v2 — enhanced visual
+   ============================================================ */
+.category-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--clr, var(--red)) 8%, var(--bg3));
+  border: 1px solid color-mix(in srgb, var(--clr, var(--red)) 20%, transparent);
+  transition: transform 0.3s var(--poster-ease), box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+.category-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--clr, var(--red)) 25%, transparent) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.category-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px color-mix(in srgb, var(--clr, var(--red)) 40%, transparent);
+  background: color-mix(in srgb, var(--clr, var(--red)) 14%, var(--bg3));
+  border-color: color-mix(in srgb, var(--clr, var(--red)) 50%, transparent);
+}
+.category-card:hover::before { opacity: 1; }
+.category-card i {
+  font-size: 1.6rem;
+  color: var(--clr, var(--red));
+  transition: transform 0.3s var(--poster-ease);
+  position: relative;
+  z-index: 1;
+}
+.category-card:hover i { transform: scale(1.18) rotate(-5deg); }
+.category-card span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--white);
+  position: relative;
+  z-index: 1;
+}
+.category-card small {
+  font-size: 0.65rem;
+  color: var(--gray2);
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   POSTER CARD RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  :root { --poster-w: 155px; }
+  .poster-rank { font-size: 4.5rem; }
+  .featured-grid .poster-card:first-child .poster-rank { font-size: 6rem; }
+}
+
+@media (max-width: 768px) {
+  :root { --poster-w: 130px; }
+  .featured-section { margin-top: -40px; }
+  .featured-grid .poster-card:first-child { grid-row: span 1; }
+  .poster-actions { display: none; }
+  .poster-info { padding-bottom: 10px; }
+  .poster-rank { font-size: 3.8rem; }
+}
+
+@media (max-width: 480px) {
+  :root { --poster-w: 110px; }
+  .featured-section { margin-top: -24px; padding: 0 3%; }
+  .featured-grid { gap: 10px; }
+  .poster-title { font-size: 0.7rem; }
+  .poster-meta { display: none; }
+  .poster-rank { font-size: 3rem; }
+}
+
+@media (max-width: 360px) {
+  :root { --poster-w: 95px; }
+}
