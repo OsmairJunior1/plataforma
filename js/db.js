@@ -159,7 +159,16 @@ const DB_DEFAULTS = {
     ]
   },
   activity: [],
-  session: null
+  session: null,
+  homeSections: {
+    featured:   { title: 'Em Destaque',            icon: 'fa-star',      visible: true, order: 0 },
+    continue:   { title: 'Continuar Assistindo',   icon: 'fa-history',   visible: true, order: 1 },
+    popular:    { title: 'Mais Populares',          icon: 'fa-fire',      visible: true, order: 2 },
+    new:        { title: 'Lançamentos',             icon: 'fa-sparkles',  visible: true, order: 3 },
+    top10:      { title: 'Top 10 da Semana',        icon: 'fa-trophy',    visible: true, order: 4 },
+    mylist:     { title: 'Minha Lista',             icon: 'fa-bookmark',  visible: true, order: 5 },
+    categories: { title: 'Explorar por Categoria', icon: 'fa-th-large',  visible: true, order: 6 },
+  },
 };
 
 // ---- INIT ----
@@ -507,8 +516,7 @@ const DB = {
     const idx = u.myList.indexOf(courseId);
     if (idx === -1) u.myList.push(courseId); else u.myList.splice(idx, 1);
   }),
-
-  // ---- GAMIFICATION ----
+GAMIFICATION ----
   awardPoints: (userId, action) => {
     const db = DB_get();
     const user = db.users.find(u => u.id === userId);
