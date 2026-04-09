@@ -433,7 +433,7 @@ function openCourseModal(id) {
   openModal('courseModal');
 }
 
-function saveCourse() {
+async function saveCourse() {
   const title = getVal('courseTitle');
   if (!title.trim()) { showToast('O título é obrigatório!', 'error'); return; }
 
