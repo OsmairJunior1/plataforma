@@ -104,39 +104,48 @@
     </div>
   </section>
 
+  <!-- FEATURED GRID (right after hero) -->
+  <section class="featured-section">
+    <div class="section-header">
+      <h2><i class="fas fa-star"></i> Em Destaque</h2>
+      <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="featured-grid" id="featuredPosterGrid">
+      <!-- Preenchido via JS -->
+    </div>
+  </section>
+
   <!-- MAIN CONTENT -->
   <main class="main-content">
 
     <!-- SECTION: CONTINUE WATCHING -->
-    <section class="section">
+    <section class="section poster-carousel-row">
       <div class="section-header">
         <h2><i class="fas fa-history"></i> Continuar Assistindo</h2>
         <a href="meus-cursos.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-btn prev" data-target="continue"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="continue">
-          <!-- Cards gerados via JS -->
-        </div>
-        <button class="carousel-btn next" data-target="continue"><i class="fas fa-chevron-right"></i></button>
+        <button class="carousel-btn prev" data-target="continueRow"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="continueRow"></div>
+        <button class="carousel-btn next" data-target="continueRow"><i class="fas fa-chevron-right"></i></button>
       </div>
     </section>
 
     <!-- SECTION: POPULAR -->
-    <section class="section">
+    <section class="section poster-carousel-row">
       <div class="section-header">
         <h2><i class="fas fa-fire"></i> Mais Populares</h2>
         <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-btn prev" data-target="popular"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="popular"></div>
-        <button class="carousel-btn next" data-target="popular"><i class="fas fa-chevron-right"></i></button>
+        <button class="carousel-btn prev" data-target="popularRow"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="popularRow"></div>
+        <button class="carousel-btn next" data-target="popularRow"><i class="fas fa-chevron-right"></i></button>
       </div>
     </section>
 
     <!-- SECTION: CATEGORIES -->
-    <section class="section" id="categorias">
+    <section class="section poster-carousel-row" id="categorias">
       <div class="section-header">
         <h2><i class="fas fa-th-large"></i> Explorar por Categoria</h2>
       </div>
@@ -175,40 +184,40 @@
     </section>
 
     <!-- SECTION: NEW RELEASES -->
-    <section class="section" id="novidades">
+    <section class="section poster-carousel-row" id="novidades">
       <div class="section-header">
         <h2><i class="fas fa-sparkles"></i> Lançamentos</h2>
         <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-btn prev" data-target="new"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="new"></div>
-        <button class="carousel-btn next" data-target="new"><i class="fas fa-chevron-right"></i></button>
+        <button class="carousel-btn prev" data-target="newRow"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="newRow"></div>
+        <button class="carousel-btn next" data-target="newRow"><i class="fas fa-chevron-right"></i></button>
       </div>
     </section>
 
     <!-- TOP 10 -->
-    <section class="section">
+    <section class="section poster-carousel-row">
       <div class="section-header">
         <h2><i class="fas fa-trophy"></i> Top 10 da Semana</h2>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-btn prev" data-target="top10"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="top10"></div>
-        <button class="carousel-btn next" data-target="top10"><i class="fas fa-chevron-right"></i></button>
+        <button class="carousel-btn prev" data-target="top10Row"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="top10Row"></div>
+        <button class="carousel-btn next" data-target="top10Row"><i class="fas fa-chevron-right"></i></button>
       </div>
     </section>
 
     <!-- SECTION: MY LIST -->
-    <section class="section">
+    <section class="section poster-carousel-row" id="mylistSection">
       <div class="section-header">
         <h2><i class="fas fa-bookmark"></i> Minha Lista</h2>
         <a href="minha-lista.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-btn prev" data-target="mylist"><i class="fas fa-chevron-left"></i></button>
-        <div class="carousel" id="mylist"></div>
-        <button class="carousel-btn next" data-target="mylist"><i class="fas fa-chevron-right"></i></button>
+        <button class="carousel-btn prev" data-target="mylistRow"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="mylistRow"></div>
+        <button class="carousel-btn next" data-target="mylistRow"><i class="fas fa-chevron-right"></i></button>
       </div>
     </section>
 
