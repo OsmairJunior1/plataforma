@@ -73,6 +73,10 @@
         <i class="fas fa-route"></i><span>Trilhas de Aprendizado</span>
       </div>
 
+      <div class="nav-item" data-panel="panel-sections">
+        <i class="fas fa-layer-group"></i><span>Seções da Home</span>
+      </div>
+
       <div class="nav-group-label">Sistema</div>
       <div class="nav-item" data-panel="panel-settings">
         <i class="fas fa-sliders"></i><span>Configurações</span>
@@ -511,6 +515,31 @@
 
       <div style="display:flex;justify-content:flex-end;gap:10px">
         <button class="btn btn-red" id="btnSaveSettings"><i class="fas fa-save"></i> Salvar Configurações</button>
+      </div>
+
+    </div>
+
+    <!-- ============================================================
+         PANEL: HOME SECTIONS
+         ============================================================ -->
+    <div class="admin-panel" id="panel-sections">
+
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-layer-group"></i> Seções da Home</h3>
+        </div>
+        <div class="form-section-body">
+          <p style="color:var(--gray2);font-size:0.82rem;margin-bottom:16px">
+            Ative/desative e reordene as seções da página inicial arrastando os itens.
+          </p>
+          <div id="sectionsList" style="display:flex;flex-direction:column;gap:8px">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-red" id="btnSaveSections"><i class="fas fa-save"></i> Salvar Seções</button>
       </div>
 
     </div>
