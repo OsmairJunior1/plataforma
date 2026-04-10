@@ -325,7 +325,7 @@ function createCourseCard(course, opts = {}) {
   return card;
 }
 
-/* ---- POPULATE CAROUSELS ---- */
+/* ---- POPULATE CAROUSELS (legacy landscape cards) ---- */
 function populateCarousel(id, courses, opts = {}) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -335,27 +335,119 @@ function populateCarousel(id, courses, opts = {}) {
   });
 }
 
-// Index page carousels
-if (document.getElementById('continue')) {
-  const inProgress = COURSES.filter(c => c.progress > 0 && c.progress < 100);
-  populateCarousel('continue', inProgress, { showProgress: true });
+/* ---- CREATE POSTER CARD (2:3 portrait, cinema style) ---- */
+function createPosterCard(course, opts = {}) {
+  const { showRank = false, index = 0 } = opts;
+  const card = document.createElement('div');
+  const userPlan = window.CURRENT_USER?.plan || 'free';
+  const isLocked = course.planRequired === 'premium' && userPlan === 'free';
+  card.className = 'poster-card' + (isLocked ? ' card-locked' : '');
+  card.dataset.id = course.id;
+
+  const VALID_BADGES = { new: 'Novo', hot: '🔥 Hot', free: 'Grátis', top: '⭐ Top' };
+  const badgeHTML = !isLocked && course.badge && VALID_BADGES[course.badge]
+    ? `<span class="poster-badge badge-${escapeHtml(course.badge)}">${VALID_BADGES[course.badge]}</span>`
+    : '';
+  const rankHTML = showRank ? `<span class="poster-rank">${index + 1}</span>` : '';
+  const lockHTML = isLocked ? `
+    <div class="poster-lock">
+      <i class="fas fa-lock"></i>
+      <span>PREMIUM</span>
+    </div>` : '';
+  const inList = MY_LIST.includes(course.id);
+
+  card.innerHTML = `
+    <div class="poster-thumb">
+      <img src="${escapeHtml(course.thumb)}" alt="${escapeHtml(course.title)}" loading="lazy" />
+      <div class="poster-gradient"></div>
+      <div class="poster-play"><i class="fas fa-play"></i></div>
+      <div class="poster-info">
+        <div class="poster-title">${escapeHtml(course.title)}</div>
+        <div class="poster-meta">
+          <span class="p-star"><i class="fas fa-star"></i></span>
+          <span>${escapeHtml(String(course.rating))}</span>
+          <span class="p-sep">•</span>
+          <span>${escapeHtml(String(course.lessons))} aulas</span>
+        </div>
+      </div>
+      ${badgeHTML}
+      ${rankHTML}
+      ${lockHTML}
+      <div class="poster-actions">
+        ${isLocked
+          ? `<button class="pa-btn pa-btn-play" data-action="upgrade" title="Premium"><i class="fas fa-crown"></i></button>`
+          : `<button class="pa-btn pa-btn-play" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
+             <button class="pa-btn" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}"><i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i></button>
+             <button class="pa-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>`
+        }
+      </div>
+    </div>
+  `;
+
+  card.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (isLocked) { showToast('🔒 Exclusivo para assinantes Premium.', 'info'); return; }
+    if (action === 'play') window.location.href = `curso.html?id=${course.id}`;
+    else if (action === 'list') { toggleMyList(course.id, card); e.stopPropagation(); }
+    else if (action === 'info') { openModal(course); e.stopPropagation(); }
+    else if (!e.target.closest('button')) openModal(course);
+  });
+
+  return card;
 }
-if (document.getElementById('popular')) {
-  const popular = [...COURSES].sort((a, b) => b.rating - a.rating).slice(0, 8);
-  populateCarousel('popular', popular);
+
+/* ---- POPULATE POSTER CAROUSEL ---- */
+function populatePosterCarousel(id, courses, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  courses.forEach((course, index) => el.appendChild(createPosterCard(course, { ...opts, index })));
 }
-if (document.getElementById('new')) {
-  const newCourses = COURSES.filter(c => c.badge === 'new' || c.badge === 'hot');
-  populateCarousel('new', newCourses);
+
+/* ---- RENDER FEATURED GRID ---- */
+function renderFeaturedGrid() {
+  const grid = document.getElementById('featuredPosterGrid');
+  if (!grid) return;
+  const courses = DB.getCourses();
+  const featuredIds = DB.getFeatured();
+  const featured = featuredIds.map(id => courses.find(c => c.id === id)).filter(Boolean);
+  const toShow = featured.length ? featured : courses.slice(0, 6);
+  grid.innerHTML = '';
+  toShow.forEach((course, index) => grid.appendChild(createPosterCard(course, { index })));
 }
-if (document.getElementById('top10')) {
-  const top10 = [...COURSES].slice(0, 10);
-  populateCarousel('top10', top10, { showTop10: true });
+
+/* ---- RENDER ALL POSTER CAROUSELS ---- */
+function renderCarousels() {
+  const courses = DB.getCourses();
+  if (!courses.length) return;
+  const user = window.CURRENT_USER;
+  const userProgress = user?.progress || {};
+
+  const inProgress = courses.filter(c => {
+    const p = userProgress[c.id];
+    return p && p.percent > 0 && p.percent < 100;
+  });
+  populatePosterCarousel('continueRow', inProgress.length ? inProgress : courses.slice(0, 6));
+
+  const popular = [...courses].sort((a, b) => b.rating - a.rating).slice(0, 10);
+  populatePosterCarousel('popularRow', popular);
+
+  const newCourses = courses.filter(c => c.badge === 'new' || c.badge === 'hot');
+  populatePosterCarousel('newRow', newCourses.length ? newCourses : courses.slice(0, 8));
+
+  const top10 = [...courses].slice(0, 10);
+  populatePosterCarousel('top10Row', top10, { showRank: true });
+
+  const mylistCourses = courses.filter(c => MY_LIST.includes(c.id));
+  populatePosterCarousel('mylistRow', mylistCourses);
+  const mylistSection = document.getElementById('mylistSection');
+  if (mylistSection) mylistSection.style.display = mylistCourses.length ? '' : 'none';
+
+  renderFeaturedGrid();
 }
-if (document.getElementById('mylist')) {
-  const mylistCourses = COURSES.filter(c => MY_LIST.includes(c.id));
-  populateCarousel('mylist', mylistCourses);
-}
+
+// Init poster carousels on home page
+if (document.getElementById('continueRow')) renderCarousels();
 
 /* ---- CATEGORY CARDS ---- */
 document.querySelectorAll('.category-card').forEach(card => {
