@@ -88,6 +88,7 @@ async function loadStateFromSupabase() {
   initCoursesPanel();
   initFeaturedPanel();
   initTrailsPanel();
+  initSectionsPanel();
   initSettingsPanel();
 
   showToast('Dados carregados do banco!', 'info');
@@ -131,6 +132,7 @@ initHeroPanel();
 initCoursesPanel();
 initFeaturedPanel();
 initTrailsPanel();
+initSectionsPanel();
 initSettingsPanel();
 
 // Se a auth já foi confirmada pelo gate ANTES deste script carregar, carrega agora.
@@ -834,4 +836,64 @@ function getDragAfterElement(container, y) {
 function updateFeaturedOrder() {
   const ids = [...document.querySelectorAll('#featuredList .sortable-item')].map(el => parseInt(el.dataset.id));
   adminState.featured = ids;
+}
+
+// =====================================================
+//  HOME SECTIONS PANEL
+// =====================================================
+function initSectionsPanel() {
+  const list = document.getElementById('sectionsList');
+  if (!list) return;
+
+  const sections = adminState.homeSections || {};
+  const sorted = Object.entries(sections).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+
+  list.innerHTML = '';
+  sorted.forEach(([key, sec]) => {
+    const row = document.createElement('div');
+    row.className = 'sortable-item';
+    row.dataset.key = key;
+    row.draggable = true;
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:grab;transition:background 0.2s';
+    row.innerHTML = `
+      <i class="fas fa-grip-vertical" style="color:var(--gray2);font-size:0.75rem;flex-shrink:0"></i>
+      <i class="fas ${escapeHtml(sec.icon)}" style="color:var(--red);width:16px;text-align:center;flex-shrink:0"></i>
+      <span style="flex:1;font-size:0.88rem;font-weight:600">${escapeHtml(sec.title)}</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" class="section-toggle" data-key="${escapeHtml(key)}" ${sec.visible ? 'checked' : ''} />
+        <span class="toggle-label-text" style="font-size:0.75rem;color:var(--gray2);min-width:42px">${sec.visible ? 'Visível' : 'Oculta'}</span>
+      </label>
+    `;
+
+    row.querySelector('.section-toggle').addEventListener('change', (e) => {
+      if (!adminState.homeSections[key]) return;
+      adminState.homeSections[key].visible = e.target.checked;
+      e.target.nextElementSibling.textContent = e.target.checked ? 'Visível' : 'Oculta';
+    });
+
+    list.appendChild(row);
+  });
+
+  // Drag-sort reusing existing getDragAfterElement helper
+  let dragged = null;
+  list.addEventListener('dragstart', (e) => {
+    dragged = e.target.closest('.sortable-item');
+    setTimeout(() => dragged?.classList.add('dragging'), 0);
+  });
+  list.addEventListener('dragend', () => dragged?.classList.remove('dragging'));
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterEl = getDragAfterElement(list, e.clientY);
+    if (!dragged) return;
+    if (!afterEl) list.appendChild(dragged);
+    else list.insertBefore(dragged, afterEl);
+  });
+
+  document.getElementById('btnSaveSections')?.addEventListener('click', async () => {
+    list.querySelectorAll('.sortable-item').forEach((row, i) => {
+      const key = row.dataset.key;
+      if (adminState.homeSections[key]) adminState.homeSections[key].order = i;
+    });
+    await saveState();
+  });
 }
