@@ -225,11 +225,15 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   filter: brightness(0.55);
 }
 .hero-video {
+  display: block; /* obrigatório no iOS Safari */
   width: 100%; height: 100%;
   object-fit: cover;
   object-position: center center;
   filter: brightness(0.55);
   pointer-events: none;
+  /* iOS: garante que o vídeo não abre em tela cheia automaticamente */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 .hero-overlay {
   position: absolute; inset: 0;

@@ -87,15 +87,14 @@ function applyAdminState(overrideState) {
     if (hero.type === 'video') {
       const vid = document.createElement('video');
       vid.className = 'hero-video';
-      vid.autoplay = true;
-      vid.muted = true;
-      vid.loop = true;
+      vid.setAttribute('autoplay', '');
+      vid.setAttribute('muted', '');
+      vid.setAttribute('loop', '');
       vid.setAttribute('playsinline', '');
+      vid.setAttribute('webkit-playsinline', '');
+      vid.muted = true;
       if (hero.poster) vid.poster = hero.poster;
-      const src = document.createElement('source');
-      src.src = hero.url || '';
-      src.type = 'video/mp4';
-      vid.appendChild(src);
+      vid.src = hero.url || '';
       heroBg.insertBefore(vid, overlay);
     } else {
       const img = document.createElement('img');
@@ -236,15 +235,14 @@ applyAdminState();
           } else {
             const _vid = document.createElement('video');
             _vid.className = 'hero-video';
-            _vid.autoplay = true;
-            _vid.muted = true;
-            _vid.loop = true;
+            _vid.setAttribute('autoplay', '');
+            _vid.setAttribute('muted', '');
+            _vid.setAttribute('loop', '');
             _vid.setAttribute('playsinline', '');
+            _vid.setAttribute('webkit-playsinline', '');
+            _vid.muted = true;
             if (h.poster) _vid.poster = h.poster;
-            const _src = document.createElement('source');
-            _src.src = h.url;
-            _src.type = 'video/mp4';
-            _vid.appendChild(_src);
+            _vid.src = h.url;
             _bg.insertBefore(_vid, _ov || null);
           }
         }

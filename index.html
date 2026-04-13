@@ -251,12 +251,16 @@
       if (!bg || !url) return;
       if (type === 'video') {
         const vid = document.createElement('video');
-        vid.autoplay = true; vid.muted = true; vid.loop = true; vid.playsinline = true;
+        // iOS Safari requer os atributos HTML — propriedades JS sozinhas não funcionam
+        vid.setAttribute('autoplay', '');
+        vid.setAttribute('muted', '');
+        vid.setAttribute('loop', '');
         vid.setAttribute('playsinline', '');
+        vid.setAttribute('webkit-playsinline', '');
+        vid.muted = true; // redundante mas necessário para alguns navegadores
         if (poster) vid.poster = poster;
-        const src = document.createElement('source');
-        src.src = url; src.type = 'video/mp4';
-        vid.appendChild(src);
+        vid.src = url; // src direto é mais confiável no iOS que <source>
+        vid.type = 'video/mp4';
         if (img) img.replaceWith(vid); else bg.insertBefore(vid, bg.firstChild);
       } else {
         if (img) img.src = url;

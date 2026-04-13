@@ -263,12 +263,16 @@
           bg.insertBefore(img, ov);
         } else {
           const vid = document.createElement('video');
-          vid.className = 'hero-video'; vid.autoplay = true; vid.muted = true; vid.loop = true;
-          vid.setAttribute('playsinline','');
+          vid.className = 'hero-video';
+          vid.setAttribute('autoplay', '');
+          vid.setAttribute('muted', '');
+          vid.setAttribute('loop', '');
+          vid.setAttribute('playsinline', '');
+          vid.setAttribute('webkit-playsinline', '');
+          vid.muted = true;
           if (data.hero_poster) vid.poster = data.hero_poster;
-          const src = document.createElement('source');
-          src.src = data.hero_url; src.type = 'video/mp4';
-          vid.appendChild(src); bg.insertBefore(vid, ov);
+          vid.src = data.hero_url;
+          bg.insertBefore(vid, ov);
         }
       }
       // Botão "Assistir Agora" — busca o curso em destaque e abre o player
