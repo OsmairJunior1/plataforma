@@ -317,6 +317,19 @@ function initHeroPanel() {
   setVal('heroPosterUrl', h.poster);
   document.getElementById('heroTitleHighlight').checked = h.titleHighlight;
 
+  // Popula dropdown "Curso em Destaque"
+  const sel = document.getElementById('heroFeaturedCourseId');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Selecione um curso —</option>';
+    adminState.courses?.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `#${c.id} — ${c.title}`;
+      if (String(c.id) === String(h.featuredCourseId)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
   // Preview update
   updateHeroPreview();
 
@@ -344,16 +357,18 @@ function initHeroPanel() {
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; }
 
+      const featuredId = getVal('heroFeaturedCourseId');
       adminState.hero = {
         ...adminState.hero,
-        badge:          getVal('heroBadge'),
-        titleLine1:     getVal('heroTitleLine1'),
-        titleLine2:     getVal('heroTitleLine2'),
-        titleHighlight: document.getElementById('heroTitleHighlight')?.checked ?? true,
-        description:    getVal('heroDesc'),
-        type:           getVal('heroMediaType'),
-        url:            getVal('heroMediaUrl'),
-        poster:         getVal('heroPosterUrl'),
+        badge:             getVal('heroBadge'),
+        titleLine1:        getVal('heroTitleLine1'),
+        titleLine2:        getVal('heroTitleLine2'),
+        titleHighlight:    document.getElementById('heroTitleHighlight')?.checked ?? true,
+        description:       getVal('heroDesc'),
+        type:              getVal('heroMediaType'),
+        url:               getVal('heroMediaUrl'),
+        poster:            getVal('heroPosterUrl'),
+        featuredCourseId:  featuredId ? Number(featuredId) : null,
       };
 
       DB.savePlatform({

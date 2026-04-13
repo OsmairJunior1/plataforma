@@ -132,7 +132,15 @@ function applyAdminState(overrideState) {
         <span class="badge-level">${escapeHtml(featuredCourse.level)}</span>
       `;
       const watchBtn = document.getElementById('heroWatchBtn');
-      if (watchBtn) watchBtn.href = `curso.html?id=${featuredCourse.id}`;
+      if (watchBtn) {
+        watchBtn.removeAttribute('href');
+        watchBtn.style.cursor = 'pointer';
+        watchBtn.onclick = (e) => {
+          e.preventDefault();
+          if (featuredCourse.watchUrl) openVideoPlayer(featuredCourse);
+          else window.location.href = `curso.html?id=${featuredCourse.id}`;
+        };
+      }
     }
   }
 
@@ -531,16 +539,23 @@ function renderFeaturedGrid() {
 
 /* ---- RENDER ALL POSTER CAROUSELS ---- */
 function renderCarousels() {
-  const courses = COURSES;  // Usa COURSES (atualizado do Supabase), não vgracademy_db
+  const courses = COURSES;
   if (!courses.length) return;
   const user = window.CURRENT_USER;
   const userProgress = user?.progress || {};
 
+  // "Continuar Assistindo" — só mostra se o usuário tem progresso real
   const inProgress = courses.filter(c => {
     const p = userProgress[c.id];
     return p && p.percent > 0 && p.percent < 100;
   });
-  populatePosterCarousel('continueRow', inProgress.length ? inProgress : courses.slice(0, 6));
+  const continueSection = document.querySelector('.section.poster-carousel-row:has(#continueRow)');
+  if (inProgress.length) {
+    if (continueSection) continueSection.style.display = '';
+    populatePosterCarousel('continueRow', inProgress);
+  } else {
+    if (continueSection) continueSection.style.display = 'none';
+  }
 
   const popular = [...courses].sort((a, b) => b.rating - a.rating).slice(0, 10);
   populatePosterCarousel('popularRow', popular);
@@ -558,6 +573,7 @@ function renderCarousels() {
 
   renderFeaturedGrid();
   renderTrailSections();
+  renderCategoriesGrid();
 }
 
 /* ---- RENDER TRAIL SECTIONS ---- */
@@ -631,6 +647,51 @@ function renderTrailSections() {
       if (e.target.closest('button')) return;
       const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
       if (course) openModal(course);
+    });
+  });
+}
+
+/* ---- RENDER CATEGORIES GRID (dynamic from courses) ---- */
+function renderCategoriesGrid() {
+  const grid = document.getElementById('categoriesGrid');
+  if (!grid) return;
+
+  const CATEGORY_META = {
+    marketing:  { label: 'Marketing',  icon: 'fa-bullhorn',   clr: '#e50914' },
+    negocios:   { label: 'Negócios',   icon: 'fa-briefcase',  clr: '#f5a623' },
+    tecnologia: { label: 'Tecnologia', icon: 'fa-code',       clr: '#00d4aa' },
+    design:     { label: 'Design',     icon: 'fa-palette',    clr: '#7c5cbf' },
+    financas:   { label: 'Finanças',   icon: 'fa-chart-line', clr: '#ff6b35' },
+    vendas:     { label: 'Vendas',     icon: 'fa-handshake',  clr: '#2196f3' },
+    geral:      { label: 'Geral',      icon: 'fa-graduation-cap', clr: '#888' },
+  };
+
+  // Conta cursos por categoria
+  const counts = {};
+  COURSES.forEach(c => {
+    const cat = c.category || 'geral';
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+
+  // Só mostra categorias que têm cursos
+  const cats = Object.keys(counts).filter(k => counts[k] > 0);
+  if (!cats.length) return;
+
+  grid.innerHTML = cats.map(cat => {
+    const meta = CATEGORY_META[cat] || { label: cat, icon: 'fa-folder', clr: '#888' };
+    const count = counts[cat];
+    return `
+      <div class="category-card" style="--clr:${escapeHtml(meta.clr)}" data-filter="${escapeHtml(cat)}">
+        <i class="fas ${escapeHtml(meta.icon)}"></i>
+        <span>${escapeHtml(meta.label)}</span>
+        <small>${count} curso${count !== 1 ? 's' : ''}</small>
+      </div>`;
+  }).join('');
+
+  // Rebind click events
+  grid.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('click', () => {
+      window.location.href = `catalogo.html?cat=${card.dataset.filter}`;
     });
   });
 }
