@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Admin — VGR Academy</title>
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ===== LOGIN GATE OVERLAY ===== -->
+<div id="adminLoginGate" style="display:flex;position:fixed;inset:0;z-index:9999;background:#0a0a0a;align-items:center;justify-content:center">
+  <div style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:40px 36px;width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:1.9rem;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px">VGR<span style="color:#e50914">ACADEMY</span></div>
+      <p style="font-size:0.82rem;color:rgba(255,255,255,0.4)"><i class="fas fa-shield-halved" style="margin-right:5px;color:#e50914"></i>Acesso Restrito — Administrador</p>
+    </div>
+    <div id="adminLoginMsg" style="display:none;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.83rem;font-weight:500;background:rgba(229,9,20,0.12);border:1px solid rgba(229,9,20,0.35);color:#e57373"></div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:0.78rem;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px">E-mail</label>
+      <input type="email" id="adminEmail" class="form-input" placeholder="admin@vgracademy.com.br" style="width:100%;box-sizing:border-box" />
+    </div>
+    <div style="margin-bottom:22px">
+      <label style="font-size:0.78rem;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px">Senha</label>
+      <input type="password" id="adminPass" class="form-input" placeholder="••••••••"
+             style="width:100%;box-sizing:border-box"
+             onkeydown="if(event.key==='Enter') doAdminLogin()" />
+    </div>
+    <button id="adminLoginBtn" onclick="doAdminLogin()"
+            class="btn btn-red" style="width:100%;padding:13px;font-size:0.95rem;justify-content:center">
+      <i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar
+    </button>
+  </div>
+</div>
+
+<div class="admin-layout">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-logo">
+      <div>
+        <div class="sidebar-logo-text">VGR<span>ACADEMY</span></div>
+        <small>Painel de Controle</small>
+      </div>
+      <a href="home.html" target="_blank" title="Ver plataforma">
+        <i class="fas fa-external-link-alt" style="color:var(--gray2);font-size:0.85rem"></i>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Geral</div>
+      <div class="nav-item active" data-panel="panel-dashboard">
+        <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+      </div>
+
+      <div class="nav-group-label">Conteúdo</div>
+      <div class="nav-item" data-panel="panel-landing">
+        <i class="fas fa-globe"></i><span>Vídeo da Landing Page</span>
+      </div>
+      <div class="nav-item" data-panel="panel-hero">
+        <i class="fas fa-film"></i><span>Hero / Destaque Principal</span>
+      </div>
+      <div class="nav-item" data-panel="panel-courses">
+        <i class="fas fa-play-circle"></i><span>Gerenciar Cursos</span>
+        <span class="nav-badge" id="navBadgeCourses">12</span>
+      </div>
+      <div class="nav-item" data-panel="panel-featured">
+        <i class="fas fa-star"></i><span>Destaques & Ordem</span>
+      </div>
+      <div class="nav-item" data-panel="panel-trails">
+        <i class="fas fa-route"></i><span>Trilhas de Aprendizado</span>
+      </div>
+
+      <div class="nav-item" data-panel="panel-sections">
+        <i class="fas fa-layer-group"></i><span>Seções da Home</span>
+      </div>
+
+      <div class="nav-group-label">Sistema</div>
+      <div class="nav-item" data-panel="panel-settings">
+        <i class="fas fa-sliders"></i><span>Configurações</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <img src="https://ui-avatars.com/api/?name=Admin&background=e50914&color=fff&size=40" alt="Admin" />
+        <div class="sidebar-user-info">
+          <strong id="adminSidebarName">Administrador</strong>
+          <small>● Online</small>
+        </div>
+        <button onclick="adminLogout()" title="Sair"
+          style="background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;padding:4px;margin-left:auto;font-size:0.85rem"
+          onmouseenter="this.style.color='#e57373'" onmouseleave="this.style.color='rgba(255,255,255,0.35)'">
+          <i class="fas fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="admin-main">
+
+    <!-- TOPBAR -->
+    <div class="admin-topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="hamburger-admin" id="hamburgerAdmin"><i class="fas fa-bars"></i></button>
+        <div class="topbar-title">
+          <h1 id="panelTitle">Dashboard</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <a href="home.html" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> Ver Plataforma</a>
+        <button class="btn btn-red btn-sm" onclick="saveState()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: DASHBOARD
+         ============================================================ -->
+    <div class="admin-panel active" id="panel-dashboard">
+
+      <div class="dash-grid">
+        <div class="dash-card" style="--clr:#e50914">
+          <div class="dash-card-icon"><i class="fas fa-play-circle"></i></div>
+          <strong id="statCursos">0</strong>
+          <span>Cursos Cadastrados</span>
+          <small>+2 este mês</small>
+        </div>
+        <div class="dash-card" style="--clr:#ffd700">
+          <div class="dash-card-icon"><i class="fas fa-star"></i></div>
+          <strong id="statEmDestaque">0</strong>
+          <span>Em Destaque</span>
+          <small>na home</small>
+        </div>
+        <div class="dash-card" style="--clr:#9c27b0">
+          <div class="dash-card-icon"><i class="fas fa-route"></i></div>
+          <strong id="statTrilhas">0</strong>
+          <span>Trilhas Ativas</span>
+          <small>de aprendizado</small>
+        </div>
+        <div class="dash-card" style="--clr:#00d4aa">
+          <div class="dash-card-icon"><i class="fas fa-film"></i></div>
+          <strong id="statAulas">0</strong>
+          <span>Total de Aulas</span>
+          <small>em todos os cursos</small>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="form-section" style="margin-bottom:20px">
+        <div class="form-section-header">
+          <h3><i class="fas fa-bolt"></i> Ações Rápidas</h3>
+        </div>
+        <div class="form-section-body" style="display:flex;flex-wrap:wrap;gap:10px">
+          <button class="btn btn-red" onclick="document.querySelector('[data-panel=panel-courses]').click();document.getElementById('btnAddCourse').click()">
+            <i class="fas fa-plus"></i> Novo Curso
+          </button>
+          <button class="btn btn-outline" onclick="document.querySelector('[data-panel=panel-hero]').click()">
+            <i class="fas fa-film"></i> Editar Hero
+          </button>
+          <button class="btn btn-outline" onclick="document.querySelector('[data-panel=panel-trails]').click()">
+            <i class="fas fa-route"></i> Nova Trilha
+          </button>
+          <a href="home.html" target="_blank" class="btn btn-outline">
+            <i class="fas fa-external-link-alt"></i> Abrir Plataforma
+          </a>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-clock-rotate-left"></i> Atividade Recente</h3>
+        </div>
+        <div class="form-section-body">
+          <div id="activityLog"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: LANDING PAGE VIDEO
+         ============================================================ -->
+    <div class="admin-panel" id="panel-landing">
+
+      <!-- Live Preview -->
+      <div class="hero-preview" id="landingPreviewWrap">
+        <video id="landingPreviewVideo" class="hero-preview-media" autoplay muted loop playsinline style="display:none"></video>
+        <img  id="landingPreviewImg"   class="hero-preview-media" src="" alt="" style="display:none" />
+        <div class="hero-preview-overlay"></div>
+        <div class="hero-preview-label">PRÉVIA AO VIVO</div>
+        <div class="hero-preview-video-badge" id="landingVideoBadge" style="display:none">
+          <i class="fas fa-video"></i> Vídeo
+        </div>
+      </div>
+
+      <!-- Mídia -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-photo-film"></i> Mídia de Fundo da Landing Page</h3>
+        </div>
+        <div class="form-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-photo-film"></i> Tipo de Mídia</label>
+              <select class="form-select" id="landingMediaType">
+                <option value="video">🎬 Vídeo</option>
+                <option value="image">🖼️ Imagem Estática</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-link"></i> URL do Vídeo / Imagem</label>
+              <input type="text" class="form-input" id="landingMediaUrl"
+                placeholder="Ex: videos/meu-video.mp4 ou URL externa" />
+              <small style="font-size:0.72rem;color:var(--gray2);margin-top:4px">
+                💡 Para usar um arquivo local: coloque o vídeo na pasta raiz do projeto e informe o nome do arquivo (ex: <strong>meu-video.mp4</strong>).
+              </small>
+            </div>
+            <div class="form-group" id="landingPosterGroup">
+              <label><i class="fas fa-image"></i> Poster (imagem enquanto carrega)</label>
+              <input type="text" class="form-input" id="landingPosterUrl"
+                placeholder="URL da imagem de poster" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-outline" onclick="initLandingPanel()"><i class="fas fa-rotate-left"></i> Descartar</button>
+        <button class="btn btn-red" id="btnSaveLanding"><i class="fas fa-save"></i> Salvar Landing</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: HERO
+         ============================================================ -->
+    <div class="admin-panel" id="panel-hero">
+
+      <!-- Live Preview -->
+      <div class="hero-preview">
+        <video id="previewMedia" class="hero-preview-media" autoplay muted loop playsinline></video>
+        <div class="hero-preview-overlay"></div>
+        <div class="hero-preview-content">
+          <div class="hero-preview-badge" id="previewBadge">Em Destaque</div>
+          <div class="hero-preview-title" id="previewTitle">Título do Curso</div>
+          <div class="hero-preview-desc" id="previewDesc">Descrição do curso em destaque...</div>
+        </div>
+        <div class="hero-preview-label">PRÉVIA AO VIVO</div>
+        <div class="hero-preview-video-badge" id="previewVideoBadge" style="display:none">
+          <i class="fas fa-video"></i> Vídeo
+        </div>
+      </div>
+
+      <!-- Media -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-photo-film"></i> Mídia do Fundo (Vídeo ou Imagem)</h3>
+        </div>
+        <div class="form-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-photo-film"></i> Tipo de Mídia</label>
+              <select class="form-select" id="heroMediaType">
+                <option value="video">🎬 Vídeo (Recomendado)</option>
+                <option value="image">🖼️ Imagem Estática</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-link"></i> URL do Vídeo / Imagem</label>
+              <input type="text" class="form-input" id="heroMediaUrl" placeholder="https://... ou caminho local (ex: videos/meu-video.mp4)" />
+              <small style="font-size:0.72rem;color:var(--gray2);margin-top:4px">
+                💡 Instagram não permite embed direto. Para usar seu Reel: baixe o vídeo (.mp4) e coloque na pasta <strong>videos/</strong> do projeto.
+              </small>
+            </div>
+            <div class="form-group" id="videoPosterGroup">
+              <label><i class="fas fa-image"></i> Poster (imagem de carregamento)</label>
+              <input type="text" class="form-input" id="heroPosterUrl" placeholder="URL da imagem de poster (aparece antes do vídeo carregar)" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-text-height"></i> Textos do Hero</h3>
+        </div>
+        <div class="form-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-tag"></i> Badge / Etiqueta</label>
+              <input type="text" class="form-input" id="heroBadge" placeholder="Ex: Em Destaque" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-heading"></i> Título — Linha 1</label>
+              <input type="text" class="form-input" id="heroTitleLine1" placeholder="Ex: Marketing Digital" />
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-heading"></i> Título — Linha 2 (destaque em vermelho)</label>
+              <input type="text" class="form-input" id="heroTitleLine2" placeholder="Ex: do Zero ao Avançado" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="heroTitleHighlight" checked />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">Linha 2 em vermelho (cor principal)</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-align-left"></i> Descrição</label>
+            <textarea class="form-textarea" id="heroDesc" placeholder="Descrição exibida abaixo do título..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-outline" onclick="initHeroPanel()"><i class="fas fa-rotate-left"></i> Descartar</button>
+        <button class="btn btn-red" id="btnSaveHero"><i class="fas fa-save"></i> Salvar Hero</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: COURSES
+         ============================================================ -->
+    <div class="admin-panel" id="panel-courses">
+
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-play-circle"></i> Todos os Cursos</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" class="form-input" id="courseSearch" placeholder="🔍 Buscar curso..." style="width:200px;padding:8px 12px;font-size:0.82rem" />
+            <select class="form-select" id="courseFilter" style="width:150px;padding:8px 12px;font-size:0.82rem">
+              <option value="all">Todos</option>
+              <option value="marketing">Marketing</option>
+              <option value="negocios">Negócios</option>
+              <option value="vendas">Vendas</option>
+              <option value="tecnologia">Tecnologia</option>
+              <option value="design">Design</option>
+              <option value="financas">Finanças</option>
+            </select>
+            <button class="btn btn-red btn-sm" id="btnAddCourse"><i class="fas fa-plus"></i> Novo Curso</button>
+          </div>
+        </div>
+        <div class="form-section-body" style="padding:0">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Capa</th>
+                  <th>Título</th>
+                  <th>Categoria</th>
+                  <th>Status</th>
+                  <th>Aulas</th>
+                  <th>Rating</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="coursesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: FEATURED
+         ============================================================ -->
+    <div class="admin-panel" id="panel-featured">
+
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-star"></i> Cursos em Destaque</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" id="btnAddFeatured"><i class="fas fa-plus"></i> Adicionar</button>
+            <button class="btn btn-red btn-sm" id="btnSaveFeatured"><i class="fas fa-save"></i> Salvar Ordem</button>
+          </div>
+        </div>
+        <div class="form-section-body">
+          <p style="font-size:0.8rem;color:var(--gray2);margin-bottom:16px">
+            <i class="fas fa-info-circle" style="color:var(--blue)"></i>
+            Arraste para reordenar. O primeiro curso da lista é exibido no carrossel de destaques da home.
+          </p>
+          <div class="sortable-list" id="featuredList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: TRAILS
+         ============================================================ -->
+    <div class="admin-panel" id="panel-trails">
+
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-route"></i> Trilhas de Aprendizado</h3>
+          <button class="btn btn-red btn-sm" id="btnAddTrail"><i class="fas fa-plus"></i> Nova Trilha</button>
+        </div>
+        <div class="form-section-body">
+          <p style="font-size:0.8rem;color:var(--gray2);margin-bottom:16px">
+            <i class="fas fa-info-circle" style="color:var(--blue)"></i>
+            Agrupe cursos em trilhas temáticas para guiar o aprendizado dos alunos.
+          </p>
+          <div id="trailsContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         PANEL: SETTINGS
+         ============================================================ -->
+    <div class="admin-panel" id="panel-settings">
+
+      <!-- Preview -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-eye"></i> Prévia da Identidade</h3>
+        </div>
+        <div class="form-section-body">
+          <div style="background:var(--bg4);border-radius:10px;padding:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div id="previewLogo" style="font-size:1.8rem;font-weight:900;letter-spacing:-0.5px">VGR<span style="color:#e50914">ACADEMY</span></div>
+            <button id="previewBtn" class="btn" style="background:#e50914;color:white;pointer-events:none"><i class="fas fa-play"></i> Assistir Agora</button>
+            <div>
+              <strong id="previewPlatformName" style="font-size:1rem">VGR Academy</strong>
+              <p style="font-size:0.75rem;color:var(--gray2)">Sua Plataforma de Cursos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform identity -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-id-card"></i> Identidade da Plataforma</h3>
+        </div>
+        <div class="form-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-signature"></i> Nome da Plataforma</label>
+              <input type="text" class="form-input" id="settingName" placeholder="Ex: VGR Academy" />
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-quote-left"></i> Tagline / Subtítulo</label>
+              <input type="text" class="form-input" id="settingTagline" placeholder="Ex: Sua Plataforma de Cursos" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-font"></i> Texto do Logo (parte 1)</label>
+              <input type="text" class="form-input" id="settingLogoText" placeholder="SKILL" />
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-font"></i> Texto do Logo (parte 2 — colorida)</label>
+              <input type="text" class="form-input" id="settingLogoSpan" placeholder="FLIX" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-palette"></i> Cor Principal</label>
+              <div class="color-row">
+                <input type="color" id="settingColor" value="#e50914" />
+                <input type="text" class="form-input" id="settingColorHex" placeholder="#e50914" style="flex:1" oninput="document.getElementById('settingColor').value=this.value" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="form-section" style="border-color:rgba(229,9,20,0.2)">
+        <div class="form-section-header" style="background:rgba(229,9,20,0.05)">
+          <h3><i class="fas fa-triangle-exclamation"></i> Zona de Perigo</h3>
+        </div>
+        <div class="form-section-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+          <button class="btn btn-outline btn-sm" id="btnExportConfig"><i class="fas fa-download"></i> Exportar Configuração (.json)</button>
+          <button class="btn btn-outline btn-sm" id="btnImportConfig"><i class="fas fa-upload"></i> Importar Configuração</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" />
+          <button class="btn btn-sm" id="btnResetAll" style="background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.3);color:#e57373">
+            <i class="fas fa-rotate-left"></i> Resetar Tudo para Padrão
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-red" id="btnSaveSettings"><i class="fas fa-save"></i> Salvar Configurações</button>
+      </div>
+
+    </div>
+
+    <!-- ============================================================
+         PANEL: HOME SECTIONS
+         ============================================================ -->
+    <div class="admin-panel" id="panel-sections">
+
+      <div class="form-section">
+        <div class="form-section-header">
+          <h3><i class="fas fa-layer-group"></i> Seções da Home</h3>
+        </div>
+        <div class="form-section-body">
+          <p style="color:var(--gray2);font-size:0.82rem;margin-bottom:16px">
+            Ative/desative e reordene as seções da página inicial arrastando os itens.
+          </p>
+          <div id="sectionsList" style="display:flex;flex-direction:column;gap:8px">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-red" id="btnSaveSections"><i class="fas fa-save"></i> Salvar Seções</button>
+      </div>
+
+    </div>
+
+  </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<!-- ============================================================
+     MODAL: CURSO
+     ============================================================ -->
+<div class="a-modal-overlay" id="courseModal">
+  <div class="a-modal">
+    <div class="a-modal-header">
+      <h3><i class="fas fa-play-circle"></i> <span id="courseModalTitle">Novo Curso</span></h3>
+      <button class="a-modal-close" onclick="closeModal('courseModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="a-modal-body">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-heading"></i> Título <span class="badge-required">obrigatório</span></label>
+          <input type="text" class="form-input" id="courseTitle" placeholder="Nome do curso" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-user-tie"></i> Instrutor</label>
+          <input type="text" class="form-input" id="courseInstructor" placeholder="Nome do professor" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-th-large"></i> Categoria</label>
+          <select class="form-select" id="courseCategory">
+            <option value="marketing">Marketing</option>
+            <option value="negocios">Negócios</option>
+            <option value="vendas">Vendas</option>
+            <option value="tecnologia">Tecnologia</option>
+            <option value="design">Design</option>
+            <option value="financas">Finanças</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-signal"></i> Nível</label>
+          <select class="form-select" id="courseLevel">
+            <option value="Iniciante">Iniciante</option>
+            <option value="Intermediário">Intermediário</option>
+            <option value="Avançado">Avançado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-film"></i> Nº de Aulas</label>
+          <input type="number" class="form-input" id="courseLessons" placeholder="Ex: 48" min="1" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-clock"></i> Duração Total</label>
+          <input type="text" class="form-input" id="courseDuration" placeholder="Ex: 12h 30min" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-star"></i> Avaliação (0–5)</label>
+          <input type="number" class="form-input" id="courseRating" step="0.1" min="0" max="5" placeholder="Ex: 4.9" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px">
+        <label><i class="fas fa-align-left"></i> Descrição</label>
+        <textarea class="form-textarea" id="courseDesc" placeholder="Descreva o que o aluno vai aprender..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-tags"></i> Tags (separadas por vírgula)</label>
+          <input type="text" class="form-input" id="courseTags" placeholder="Ex: SEO, Google, Tráfego" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-certificate"></i> Badge</label>
+          <select class="form-select" id="courseBadge">
+            <option value="">Nenhum</option>
+            <option value="new">🆕 Novo</option>
+            <option value="hot">🔥 Hot</option>
+            <option value="top">⭐ Top</option>
+            <option value="free">✅ Grátis</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Acesso</label>
+          <select class="form-select" id="coursePlanRequired">
+            <option value="free">🔓 Gratuito (todos)</option>
+            <option value="premium">🔒 Premium (somente assinantes)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Thumbnails -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
+        <div>
+          <p style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px"><i class="fas fa-image" style="color:var(--red);margin-right:5px"></i>Capa do Card</p>
+          <input type="text" class="form-input" id="courseThumbUrl" placeholder="URL da imagem de capa" style="margin-bottom:8px" />
+          <input type="file" id="courseThumbFile" accept="image/*" style="display:none" />
+          <div style="position:relative;cursor:pointer" onclick="document.getElementById('courseThumbFile').click()">
+            <img id="courseThumbPreview" src="" alt="Preview" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:7px;background:var(--bg4);border:1px solid var(--border)" onerror="this.src=''" />
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border-radius:7px;opacity:0;transition:opacity 0.2s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
+              <span style="font-size:0.8rem;font-weight:600"><i class="fas fa-upload" style="margin-right:5px"></i>Trocar imagem</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px"><i class="fas fa-panorama" style="color:var(--red);margin-right:5px"></i>Imagem Hero (modal/detalhe)</p>
+          <input type="text" class="form-input" id="courseHeroUrl" placeholder="URL da imagem de capa expandida" style="margin-bottom:8px" />
+          <img id="courseHeroPreview" src="" alt="Preview" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:7px;background:var(--bg4);border:1px solid var(--border)" onerror="this.src=''" />
+        </div>
+      </div>
+
+    </div>
+    <div class="a-modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('courseModal')">Cancelar</button>
+      <button class="btn btn-red" id="btnSaveCourse"><i class="fas fa-save"></i> Salvar Curso</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: FEATURED SELECTOR -->
+<div class="a-modal-overlay" id="featuredSelectorModal">
+  <div class="a-modal">
+    <div class="a-modal-header">
+      <h3><i class="fas fa-star"></i> Selecionar Cursos em Destaque</h3>
+      <button class="a-modal-close" onclick="closeModal('featuredSelectorModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="a-modal-body">
+      <p style="font-size:0.82rem;color:var(--gray2);margin-bottom:14px">Clique nos cursos para marcar/desmarcar como destaque.</p>
+      <div class="course-selector-grid" id="featuredSelectorGrid"></div>
+    </div>
+    <div class="a-modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('featuredSelectorModal')">Cancelar</button>
+      <button class="btn btn-red" id="btnConfirmFeatured"><i class="fas fa-check"></i> Confirmar Seleção</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TRAIL -->
+<div class="a-modal-overlay" id="trailModal">
+  <div class="a-modal">
+    <div class="a-modal-header">
+      <h3><i class="fas fa-route"></i> <span id="trailModalTitle">Nova Trilha</span></h3>
+      <button class="a-modal-close" onclick="closeModal('trailModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="a-modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label><i class="fas fa-signature"></i> Nome da Trilha <span class="badge-required">obrigatório</span></label>
+          <input type="text" class="form-input" id="trailName" placeholder="Ex: Marketing Completo" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-palette"></i> Cor da Trilha</label>
+          <div class="color-row">
+            <input type="color" id="trailColor" value="#e50914" />
+            <span style="font-size:0.8rem;color:var(--gray2)">Cor exibida no card da trilha</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+        <input type="text" class="form-input" id="trailDesc" placeholder="Descreva esta trilha..." />
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-play-circle"></i> Cursos da Trilha (selecione abaixo)</label>
+        <div class="course-selector-grid" id="trailCourseGrid" style="max-height:250px"></div>
+      </div>
+    </div>
+    <div class="a-modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('trailModal')">Cancelar</button>
+      <button class="btn btn-red" id="btnSaveTrail"><i class="fas fa-save"></i> Salvar Trilha</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/db.js"></script>
+<script src="js/supabase-db.js"></script>
+
+<!-- ===== ADMIN AUTH GATE ===== -->
+<script>
+function releaseAdminPanel(name) {
+  document.getElementById('adminLoginGate').style.display = 'none';
+  document.body.style.overflow = '';
+  document.body.style.visibility = 'visible';
+  const nameEl = document.getElementById('adminSidebarName');
+  if (nameEl) nameEl.textContent = name || 'Administrador';
+}
+
+function lockAdminPanel() {
+  document.getElementById('adminLoginGate').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.body.style.visibility = 'visible';
+}
+
+// Verifica sessão Supabase ativa ao carregar
+(async function () {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { lockAdminPanel(); return; }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles').select('name, plan').eq('id', session.user.id).single();
+
+    if (!profile || profile.plan !== 'admin') {
+      await supabaseClient.auth.signOut();
+      lockAdminPanel(); return;
+    }
+
+    // Sessão admin válida — libera o painel imediatamente
+    releaseAdminPanel(profile.name || session.user.email);
+
+    // Sinaliza que auth passou; admin.js vai pegar esse flag e chamar loadStateFromSupabase
+    window.__adminAuthDone = true;
+    if (typeof loadStateFromSupabase === 'function') loadStateFromSupabase();
+  } catch (e) {
+    lockAdminPanel();
+  }
+})();
+
+async function doAdminLogin() {
+  const email = (document.getElementById('adminEmail')?.value || '').trim();
+  const pass  =  document.getElementById('adminPass')?.value || '';
+  const btn   =  document.getElementById('adminLoginBtn');
+
+  document.getElementById('adminLoginMsg').style.display = 'none';
+  if (!email || !pass) { showAdminMsg('Preencha e-mail e senha.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Verificando...';
+
+  try {
+    // 1. Autenticar no Supabase
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+    if (error) throw new Error('E-mail ou senha incorretos.');
+
+    // 2. Buscar perfil
+    let { data: profile, error: pErr } = await supabaseClient
+      .from('profiles').select('name, plan').eq('id', data.user.id).single();
+
+    // PGRST116 = nenhuma linha encontrada — perfil ainda não existe, criar agora
+    if (pErr?.code === 'PGRST116' || (!profile && !pErr)) {
+      const userName = data.user.user_metadata?.name || data.user.email.split('@')[0];
+      const { data: newProfile, error: insertErr } = await supabaseClient
+        .from('profiles')
+        .insert({ id: data.user.id, name: userName, plan: 'free' })
+        .select('name, plan')
+        .single();
+      if (insertErr) {
+        await supabaseClient.auth.signOut();
+        throw new Error('Erro ao criar perfil: ' + insertErr.message);
+      }
+      profile = newProfile;
+    } else if (pErr) {
+      // Outro erro de banco (rede, RLS, etc.)
+      await supabaseClient.auth.signOut();
+      throw new Error('Erro ao verificar perfil: ' + pErr.message);
+    }
+
+    if (!profile || profile.plan !== 'admin') {
+      await supabaseClient.auth.signOut();
+      throw new Error('Acesso negado. Esta conta não tem permissão de administrador.');
+    }
+
+    // 3. Liberar painel
+    releaseAdminPanel(profile.name || email);
+
+    // 4. Recarregar dados do Supabase
+    if (typeof loadStateFromSupabase === 'function') await loadStateFromSupabase();
+
+  } catch (e) {
+    showAdminMsg(e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px"></i>Entrar';
+  }
+}
+
+function showAdminMsg(text) {
+  const el = document.getElementById('adminLoginMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+async function adminLogout() {
+  await supabaseClient.auth.signOut();
+  location.reload();
+}
+</script>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

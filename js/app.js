@@ -1,0 +1,807 @@
+// =====================================================
+//  VGR ACADEMY — APP MAIN SCRIPT
+// =====================================================
+
+/* ---- CARREGAR ESTADO DO PAINEL (localStorage) ---- */
+const DEFAULT_STATE = {
+  platform: { name: 'VGR Academy', tagline: 'Sua Plataforma de Cursos', primaryColor: '#e50914', logoText: 'VGR', logoSpan: 'ACADEMY' },
+  hero: {
+    type: 'video',
+    url: 'Hoje nossa reuni%C3%A3o no BNI foi marcada por conex%C3%B5es poderosas e muita gera%C3%A7%C3%A3o de neg%C3%B3cios.Tivemos.mp4',
+    poster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&q=80',
+    badge: 'Em Destaque',
+    titleLine1: 'Aprendendo a fazer',
+    titleLine2: 'Networking Intencional',
+    titleHighlight: true,
+    description: 'Conheça as estratégias mais poderosas utilizadas por Luccas Cavalli, uma das pessoas de maior influência no meio do BNI.',
+    featuredCourseId: 1,
+  },
+  featured: [1, 3, 7, 11],
+  courses: null // será preenchido com COURSES do data.js
+};
+
+function getAdminState() {
+  try {
+    const saved = localStorage.getItem('vgracademy_admin')
+               || localStorage.getItem('eduflix_admin');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  // Retorna o estado padrão com os cursos do data.js
+  return { ...DEFAULT_STATE, courses: COURSES };
+}
+
+function applyAdminState() {
+  const state = getAdminState();
+  if (!state) return;
+
+  // --- Plataforma: logo e nome ---
+  const { platform, featured, courses } = state;
+  let hero = state.hero;
+  if (platform) {
+    // Atualiza logo em todos os elementos com id="siteLogo"
+    // Usar escapeHtml() para prevenir XSS via dados do painel
+    const safeLogoText = escapeHtml(platform.logoText || 'SKILL');
+    const safeLogoSpan = escapeHtml(platform.logoSpan || 'FLIX');
+    document.querySelectorAll('#siteLogo, .logo').forEach(el => {
+      el.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
+    });
+    // Atualiza login-logo se existir
+    const loginLogo = document.querySelector('.login-logo');
+    if (loginLogo) loginLogo.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
+    // Atualiza footer logo
+    const footerLogo = document.querySelector('.footer-logo');
+    if (footerLogo) footerLogo.innerHTML = `${safeLogoText}<span>${safeLogoSpan}</span>`;
+    // Cor principal
+    if (platform.primaryColor) {
+      document.documentElement.style.setProperty('--red', platform.primaryColor);
+    }
+    // Título da aba
+    document.title = document.title.replace(/VGR Academy/g, platform.name || 'VGR Academy');
+  }
+
+  // --- Hero (apenas na index) ---
+  // Prioridade: vgracademy_admin (Supabase) > vgracademy_db (cache local)
+  if (!hero?.url && !hero?.titleLine1 && typeof DB !== 'undefined') {
+    // Só usa cache local como fallback se não houver dados do Supabase
+    const p = DB.getPlatform();
+    if (p.heroUrl || p.heroBadge || p.heroTitleLine1) {
+      hero = {
+        ...(hero || {}),
+        type:           p.heroType            || hero?.type           || 'video',
+        url:            p.heroUrl             || hero?.url            || '',
+        poster:         p.heroPoster          || hero?.poster         || '',
+        badge:          p.heroBadge           || hero?.badge          || 'Em Destaque',
+        titleLine1:     p.heroTitleLine1      || hero?.titleLine1     || '',
+        titleLine2:     p.heroTitleLine2      || hero?.titleLine2     || '',
+        titleHighlight: p.heroTitleHighlight  !== undefined ? p.heroTitleHighlight : (hero?.titleHighlight !== false),
+        description:    p.heroDescription     || hero?.description    || '',
+      };
+    }
+  }
+  if (hero && document.getElementById('heroBg')) {
+    // Mídia de fundo
+    const heroBg = document.getElementById('heroBg');
+    const overlay = heroBg.querySelector('.hero-overlay');
+    // Remove mídia antiga se existir
+    heroBg.querySelectorAll('video, img.hero-video, img.hero-img').forEach(el => el.remove());
+    if (hero.type === 'video') {
+      const vid = document.createElement('video');
+      vid.className = 'hero-video';
+      vid.autoplay = true;
+      vid.muted = true;
+      vid.loop = true;
+      vid.setAttribute('playsinline', '');
+      if (hero.poster) vid.poster = hero.poster;
+      const src = document.createElement('source');
+      src.src = hero.url || '';
+      src.type = 'video/mp4';
+      vid.appendChild(src);
+      heroBg.insertBefore(vid, overlay);
+    } else {
+      const img = document.createElement('img');
+      img.className = 'hero-img';
+      img.src = hero.url || hero.poster || '';
+      img.alt = 'Hero';
+      heroBg.insertBefore(img, overlay);
+    }
+
+    // Textos
+    const badgeEl = document.getElementById('heroBadgeText');
+    if (badgeEl) badgeEl.textContent = hero.badge || 'Em Destaque';
+
+    const titleEl = document.getElementById('heroTitleEl');
+    if (titleEl) {
+      const highlight = hero.titleHighlight !== false;
+      titleEl.innerHTML = `${escapeHtml(hero.titleLine1 || '')}<br /><span style="color:${highlight ? 'var(--red)' : 'inherit'}">${escapeHtml(hero.titleLine2 || '')}</span>`;
+    }
+
+    const descEl = document.getElementById('heroDescEl');
+    if (descEl) descEl.textContent = hero.description || '';
+
+    // Meta do curso em destaque
+    const metaEl = document.getElementById('heroMetaEl');
+    const featuredCourse = courses?.find(c => c.id === hero.featuredCourseId) || courses?.[0];
+    if (metaEl && featuredCourse) {
+      metaEl.innerHTML = `
+        <span class="rating"><i class="fas fa-star"></i> ${escapeHtml(String(featuredCourse.rating))}</span>
+        <span class="separator">•</span>
+        <span>${escapeHtml(String(featuredCourse.lessons))} aulas</span>
+        <span class="separator">•</span>
+        <span>${escapeHtml(featuredCourse.duration)}</span>
+        <span class="separator">•</span>
+        <span class="badge-level">${escapeHtml(featuredCourse.level)}</span>
+      `;
+      const watchBtn = document.getElementById('heroWatchBtn');
+      if (watchBtn) watchBtn.href = `curso.html?id=${featuredCourse.id}`;
+    }
+  }
+
+  // --- Usar cursos do painel nos carrosséis ---
+  if (courses && courses.length) {
+    // Sobrescreve o array COURSES global com os dados do painel
+    COURSES.length = 0;
+    courses.forEach(c => COURSES.push(c));
+  }
+
+  // --- Manter lista de destaques ordenada globalmente ---
+  if (featured && featured.length) {
+    window.FEATURED_IDS = featured;
+  }
+}
+
+// 1. Aplica estado local imediatamente (sem delay)
+applyAdminState();
+
+// 2. Carrega dados frescos do Supabase em segundo plano
+(async function loadFromSupabase() {
+  if (!window.SupabaseDB) return;
+
+  try {
+    const [settingsRow, courses] = await Promise.all([
+      SupabaseDB.getSettings(),
+      SupabaseDB.getCourses({ activeOnly: true }),
+    ]);
+
+    const remoteState = { ...getAdminState() };
+    let changed = false;
+
+    if (settingsRow) {
+      const s = SupabaseDB.settingsToState(settingsRow);
+      remoteState.platform = s.platform;
+      remoteState.hero     = s.hero;
+      remoteState.landing  = s.landing;
+      if (s.featured?.length) remoteState.featured = s.featured;
+      if (s.trails?.length) remoteState.trails = s.trails;
+      changed = true;
+
+      // Sincroniza hero → vgracademy_db para próximas visitas lerem sem Supabase
+      if (s.hero && typeof DB !== 'undefined') {
+        DB.savePlatform({
+          heroType:           s.hero.type            || 'video',
+          heroUrl:            s.hero.url             || '',
+          heroPoster:         s.hero.poster          || '',
+          heroBadge:          s.hero.badge           || '',
+          heroTitleLine1:     s.hero.titleLine1      || '',
+          heroTitleLine2:     s.hero.titleLine2      || '',
+          heroTitleHighlight: s.hero.titleHighlight  !== false,
+          heroDescription:    s.hero.description     || '',
+        });
+      }
+    }
+
+    if (courses?.length) {
+      remoteState.courses = courses.map(c => SupabaseDB.courseToLocal(c));
+      // Usa featured_ids (ordem salva pelo admin) como prioridade.
+      // Só usa flag featured dos cursos como fallback se featured_ids não existir.
+      if (!remoteState.featured?.length) {
+        const featFromDB = courses.filter(c => c.featured).map(c => c.id);
+        if (featFromDB.length) remoteState.featured = featFromDB;
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      // Salva no cache local e re-aplica ao DOM
+      try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
+      applyAdminState();
+      // Recarrega carrosséis se a função existir
+      if (typeof renderCarousels === 'function') renderCarousels();
+    }
+  } catch(e) {
+    console.warn('[app] loadFromSupabase falhou, usando cache local:', e.message);
+  }
+})();
+
+/* ---- NAVBAR SCROLL ---- */
+const navbar = document.getElementById('navbar');
+if (navbar) {
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
+  });
+}
+
+/* ---- HAMBURGER ---- */
+const hamburger = document.getElementById('hamburger');
+const mobileMenu = document.getElementById('mobileMenu');
+if (hamburger && mobileMenu) {
+  hamburger.addEventListener('click', () => {
+    mobileMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+      mobileMenu.classList.remove('open');
+    }
+  });
+}
+
+/* ---- SEARCH ---- */
+const searchToggle = document.getElementById('searchToggle');
+const searchBar = document.getElementById('searchBar');
+const closeSearch = document.getElementById('closeSearch');
+const searchInput = document.getElementById('searchInput');
+
+if (searchToggle) {
+  searchToggle.addEventListener('click', () => {
+    searchBar.classList.add('active');
+    searchInput?.focus();
+  });
+}
+if (closeSearch) {
+  closeSearch.addEventListener('click', () => {
+    searchBar.classList.remove('active');
+    if (searchInput) searchInput.value = '';
+  });
+}
+if (searchInput) {
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && searchInput.value.trim()) {
+      window.location.href = `catalogo.html?q=${encodeURIComponent(searchInput.value.trim())}`;
+    }
+  });
+}
+
+/* ---- CAROUSEL NAVIGATION ---- */
+document.querySelectorAll('.carousel-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const carousel = document.getElementById(targetId);
+    if (!carousel) return;
+    const scrollAmt = carousel.clientWidth * 0.75;
+    carousel.scrollBy({ left: btn.classList.contains('prev') ? -scrollAmt : scrollAmt, behavior: 'smooth' });
+  });
+});
+
+/* ---- CREATE COURSE CARD ---- */
+function createCourseCard(course, opts = {}) {
+  const { showProgress = false, showTop10 = false, index = 0 } = opts;
+  const card = document.createElement('div');
+
+  // Verificar se o curso é premium e o usuário é free
+  const userPlan    = window.CURRENT_USER?.plan || 'free';
+  const isLocked    = course.planRequired === 'premium' && userPlan === 'free';
+
+  card.className = 'course-card' + (showTop10 ? ' top10-card' : '') + (isLocked ? ' card-locked' : '');
+  card.dataset.id = course.id;
+
+  // Whitelist de badges válidos para evitar injeção de classe CSS arbitrária
+  const VALID_BADGES = { new: 'Novo', hot: '🔥 Hot', free: 'Grátis', top: '⭐ Top' };
+  const badgeHTML = !isLocked && course.badge && VALID_BADGES[course.badge]
+    ? `<span class="card-badge badge-${escapeHtml(course.badge)}">${VALID_BADGES[course.badge]}</span>`
+    : '';
+
+  // Garantir que progress seja um número entre 0-100
+  const safeProgress = Math.min(100, Math.max(0, Number(course.progress) || 0));
+  const progressHTML = !isLocked && showProgress && safeProgress > 0
+    ? `<div class="card-progress"><div class="card-progress-fill" style="width:${safeProgress}%"></div></div>`
+    : '';
+
+  const top10HTML = showTop10
+    ? `<span class="top10-number">${index + 1}</span>`
+    : '';
+
+  const inList = MY_LIST.includes(course.id);
+
+  // Overlay de cadeado para cursos premium
+  const lockHTML = isLocked ? `
+    <div class="card-lock-overlay">
+      <div class="card-lock-icon"><i class="fas fa-lock"></i></div>
+      <span class="card-lock-label">PREMIUM</span>
+    </div>` : '';
+
+  // Ações: se bloqueado, não mostra botão de play
+  const actionsHTML = isLocked
+    ? `<button class="card-btn card-btn-premium" data-action="upgrade" title="Ver planos">
+         <i class="fas fa-crown"></i> Assinar Premium
+       </button>`
+    : `<button class="card-btn play-small" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
+       <button class="card-btn btn-addlist" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}">
+         <i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i>
+       </button>
+       <button class="card-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>
+       <span style="margin-left:auto;font-size:0.7rem;color:var(--gray)">${escapeHtml(course.duration)}</span>`;
+
+  // Todos os dados de curso passam por escapeHtml() antes de innerHTML
+  card.innerHTML = `
+    <div class="card-thumb">
+      <img src="${escapeHtml(course.thumb)}" alt="${escapeHtml(course.title)}" loading="lazy" />
+      ${isLocked ? '' : '<div class="card-play-btn"><i class="fas fa-play"></i></div>'}
+      <div class="card-badges">${badgeHTML}</div>
+      ${top10HTML}
+      ${progressHTML}
+      ${lockHTML}
+    </div>
+    <div class="card-body">
+      <div class="card-title">${escapeHtml(course.title)}</div>
+      <div class="card-meta">
+        <span class="star"><i class="fas fa-star"></i> ${escapeHtml(String(course.rating))}</span>
+        <span>${escapeHtml(String(course.lessons))} aulas</span>
+        <span>${escapeHtml(course.level)}</span>
+      </div>
+    </div>
+    <div class="card-expanded">
+      <p>${escapeHtml(course.desc)}</p>
+      <div class="card-actions">${actionsHTML}</div>
+    </div>
+  `;
+
+  // Card actions
+  card.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (isLocked) {
+      // Curso bloqueado — mostrar mensagem de upgrade
+      showToast('🔒 Este curso é exclusivo para assinantes Premium. Em breve disponível!', 'info');
+      return;
+    }
+    if (action === 'play') {
+      window.location.href = `curso.html?id=${course.id}`;
+    } else if (action === 'list') {
+      toggleMyList(course.id, card);
+      e.stopPropagation();
+    } else if (action === 'info') {
+      openModal(course);
+      e.stopPropagation();
+    } else if (!e.target.closest('button')) {
+      openModal(course);
+    }
+  });
+
+  return card;
+}
+
+/* ---- POPULATE CAROUSELS (legacy landscape cards) ---- */
+function populateCarousel(id, courses, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  courses.forEach((course, index) => {
+    el.appendChild(createCourseCard(course, { ...opts, index }));
+  });
+}
+
+/* ---- CREATE POSTER CARD (2:3 portrait, cinema style) ---- */
+function createPosterCard(course, opts = {}) {
+  const { showRank = false, index = 0 } = opts;
+  const card = document.createElement('div');
+  const userPlan = window.CURRENT_USER?.plan || 'free';
+  const isLocked = course.planRequired === 'premium' && userPlan === 'free';
+  card.className = 'poster-card' + (isLocked ? ' card-locked' : '');
+  card.dataset.id = course.id;
+
+  const VALID_BADGES = { new: 'Novo', hot: '🔥 Hot', free: 'Grátis', top: '⭐ Top' };
+  const badgeHTML = !isLocked && course.badge && VALID_BADGES[course.badge]
+    ? `<span class="poster-badge badge-${escapeHtml(course.badge)}">${VALID_BADGES[course.badge]}</span>`
+    : '';
+  const rankHTML = showRank ? `<span class="poster-rank">${index + 1}</span>` : '';
+  const lockHTML = isLocked ? `
+    <div class="poster-lock">
+      <i class="fas fa-lock"></i>
+      <span>PREMIUM</span>
+    </div>` : '';
+  const inList = MY_LIST.includes(course.id);
+
+  card.innerHTML = `
+    <div class="poster-thumb">
+      <img src="${escapeHtml(course.thumb)}" alt="${escapeHtml(course.title)}" loading="lazy" />
+      <div class="poster-gradient"></div>
+      <div class="poster-play"><i class="fas fa-play"></i></div>
+      <div class="poster-info">
+        <div class="poster-title">${escapeHtml(course.title)}</div>
+        <div class="poster-meta">
+          <span class="p-star"><i class="fas fa-star"></i></span>
+          <span>${escapeHtml(String(course.rating))}</span>
+          <span class="p-sep">•</span>
+          <span>${escapeHtml(String(course.lessons))} aulas</span>
+        </div>
+      </div>
+      ${badgeHTML}
+      ${rankHTML}
+      ${lockHTML}
+      <div class="poster-actions">
+        ${isLocked
+          ? `<button class="pa-btn pa-btn-play" data-action="upgrade" title="Premium"><i class="fas fa-crown"></i></button>`
+          : `<button class="pa-btn pa-btn-play" data-action="play" title="Assistir"><i class="fas fa-play"></i></button>
+             <button class="pa-btn" data-action="list" title="${inList ? 'Remover da lista' : 'Adicionar à lista'}"><i class="fas ${inList ? 'fa-check' : 'fa-plus'}"></i></button>
+             <button class="pa-btn" data-action="info" title="Mais info"><i class="fas fa-info"></i></button>`
+        }
+      </div>
+    </div>
+  `;
+
+  card.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (isLocked) { showToast('🔒 Exclusivo para assinantes Premium.', 'info'); return; }
+    if (action === 'play') window.location.href = `curso.html?id=${course.id}`;
+    else if (action === 'list') { toggleMyList(course.id, card); e.stopPropagation(); }
+    else if (action === 'info') { openModal(course); e.stopPropagation(); }
+    else if (!e.target.closest('button')) openModal(course);
+  });
+
+  return card;
+}
+
+/* ---- POPULATE POSTER CAROUSEL ---- */
+function populatePosterCarousel(id, courses, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  courses.forEach((course, index) => el.appendChild(createPosterCard(course, { ...opts, index })));
+}
+
+/* ---- RENDER FEATURED GRID ---- */
+function renderFeaturedGrid() {
+  const grid = document.getElementById('featuredPosterGrid');
+  if (!grid) return;
+
+  // 1ª prioridade: IDs ordenados salvos pelo admin (FEATURED_IDS)
+  const ids = window.FEATURED_IDS;
+  let toShow = [];
+
+  if (ids && ids.length) {
+    toShow = ids.map(id => COURSES.find(c => c.id === id || c.id === Number(id))).filter(Boolean);
+  }
+
+  // 2ª prioridade: cursos com flag featured = true (vinda do Supabase)
+  if (!toShow.length) {
+    toShow = COURSES.filter(c => c.featured);
+  }
+
+  // Fallback: primeiros 6 cursos
+  if (!toShow.length) {
+    toShow = COURSES.slice(0, 6);
+  }
+
+  grid.innerHTML = '';
+  toShow.forEach((course, index) => grid.appendChild(createPosterCard(course, { index })));
+}
+
+/* ---- RENDER ALL POSTER CAROUSELS ---- */
+function renderCarousels() {
+  const courses = COURSES;  // Usa COURSES (atualizado do Supabase), não vgracademy_db
+  if (!courses.length) return;
+  const user = window.CURRENT_USER;
+  const userProgress = user?.progress || {};
+
+  const inProgress = courses.filter(c => {
+    const p = userProgress[c.id];
+    return p && p.percent > 0 && p.percent < 100;
+  });
+  populatePosterCarousel('continueRow', inProgress.length ? inProgress : courses.slice(0, 6));
+
+  const popular = [...courses].sort((a, b) => b.rating - a.rating).slice(0, 10);
+  populatePosterCarousel('popularRow', popular);
+
+  const newCourses = courses.filter(c => c.badge === 'new' || c.badge === 'hot');
+  populatePosterCarousel('newRow', newCourses.length ? newCourses : courses.slice(0, 8));
+
+  const top10 = [...courses].slice(0, 10);
+  populatePosterCarousel('top10Row', top10, { showRank: true });
+
+  const mylistCourses = courses.filter(c => MY_LIST.includes(c.id));
+  populatePosterCarousel('mylistRow', mylistCourses);
+  const mylistSection = document.getElementById('mylistSection');
+  if (mylistSection) mylistSection.style.display = mylistCourses.length ? '' : 'none';
+
+  renderFeaturedGrid();
+  renderTrailSections();
+}
+
+/* ---- RENDER TRAIL SECTIONS ---- */
+function renderTrailSections() {
+  const container = document.getElementById('trailsContainer');
+  if (!container) return;
+
+  const state = getAdminState();
+  const trails = state.trails || [];
+  const allCourses = COURSES;
+
+  if (!trails.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = trails.map(trail => {
+    const trailCourses = (trail.courses || [])
+      .map(id => allCourses.find(c => c.id === id))
+      .filter(Boolean);
+    if (!trailCourses.length) return '';
+
+    const rowId = `trailRow_${trail.id}`;
+    const safeColor = escapeHtml(trail.color || '#e50914');
+    const safeName  = escapeHtml(trail.name  || 'Trilha');
+
+    const cards = trailCourses.map(course => {
+      const card = createCourseCard(course);
+      return card.outerHTML;
+    }).join('');
+
+    return `
+      <section class="section poster-carousel-row trail-section">
+        <div class="section-header">
+          <h2><span class="trail-dot" style="background:${safeColor};width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px"></span>${safeName}</h2>
+        </div>
+        <div class="carousel-wrap">
+          <button class="carousel-btn prev" data-target="${rowId}"><i class="fas fa-chevron-left"></i></button>
+          <div class="carousel" id="${rowId}">${cards}</div>
+          <button class="carousel-btn next" data-target="${rowId}"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </section>
+    `;
+  }).join('');
+
+  // Rebind carousel buttons para os novos elementos
+  container.querySelectorAll('.carousel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const carousel = document.getElementById(targetId);
+      if (!carousel) return;
+      const scrollAmt = carousel.clientWidth * 0.75;
+      carousel.scrollBy({ left: btn.classList.contains('prev') ? -scrollAmt : scrollAmt, behavior: 'smooth' });
+    });
+  });
+
+  // Rebind card click para trilhas
+  container.querySelectorAll('.course-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
+      if (id) window.location.href = `curso.html?id=${id}`;
+    });
+  });
+}
+
+// Init poster carousels on home page
+if (document.getElementById('continueRow')) renderCarousels();
+
+/* ---- CATEGORY CARDS ---- */
+document.querySelectorAll('.category-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const filter = card.dataset.filter;
+    window.location.href = `catalogo.html?cat=${filter}`;
+  });
+});
+
+/* ---- MY LIST TOGGLE ---- */
+function toggleMyList(courseId, cardEl) {
+  const idx = MY_LIST.indexOf(courseId);
+  const btn = cardEl?.querySelector('[data-action="list"]');
+  if (idx === -1) {
+    MY_LIST.push(courseId);
+    if (btn) btn.innerHTML = '<i class="fas fa-check"></i>';
+    showToast('Adicionado à sua lista!');
+  } else {
+    MY_LIST.splice(idx, 1);
+    if (btn) btn.innerHTML = '<i class="fas fa-plus"></i>';
+    showToast('Removido da sua lista.');
+  }
+}
+
+/* ---- MODAL ---- */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalClose = document.getElementById('modalClose');
+
+function openModal(course) {
+  if (!modalOverlay) return;
+  document.getElementById('modalImg').src = course.hero || course.thumb;
+  document.getElementById('modalTitle').textContent = course.title;
+  document.getElementById('modalDesc').textContent = course.desc;
+  document.getElementById('modalLessons').textContent = course.lessons;
+  document.getElementById('modalDuration').textContent = course.duration;
+  document.getElementById('modalRating').textContent = `⭐ ${course.rating}`;
+  document.getElementById('modalLevel').textContent = course.level;
+  document.getElementById('modalWatch').href = `curso.html?id=${course.id}`;
+
+  const tagsEl = document.getElementById('modalTags');
+  tagsEl.innerHTML = course.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('');
+
+  modalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  if (!modalOverlay) return;
+  modalOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+if (modalClose) modalClose.addEventListener('click', closeModal);
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* ---- TOAST ---- */
+function showToast(msg, icon = 'fa-circle-check') {
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+/* ---- PLAYER PAGE TABS ---- */
+document.querySelectorAll('.player-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.player-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.player-tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.getElementById(target)?.classList.add('active');
+  });
+});
+
+/* ---- CATALOG FILTER ---- */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    filterCatalog(filter);
+  });
+});
+
+function filterCatalog(filter) {
+  const grid = document.getElementById('courseGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const filtered = filter === 'all' ? COURSES : COURSES.filter(c => c.category === filter || c.level.toLowerCase() === filter || c.badge === filter);
+  filtered.forEach(c => {
+    const card = createCourseCard(c);
+    card.style.minWidth = 'unset';
+    card.style.maxWidth = 'unset';
+    grid.appendChild(card);
+  });
+  if (filtered.length === 0) {
+    grid.innerHTML = '<p style="color:var(--gray);padding:20px 0">Nenhum curso encontrado.</p>';
+  }
+}
+
+// Init catalog page
+if (document.getElementById('courseGrid')) {
+  const params = new URLSearchParams(window.location.search);
+  const cat = params.get('cat');
+  const q = params.get('q');
+
+  if (q) {
+    const results = COURSES.filter(c =>
+      c.title.toLowerCase().includes(q.toLowerCase()) ||
+      c.tags.some(t => t.toLowerCase().includes(q.toLowerCase()))
+    );
+    const grid = document.getElementById('courseGrid');
+    if (grid) {
+      grid.innerHTML = '';
+      results.forEach(c => { const card = createCourseCard(c); card.style.minWidth='unset'; card.style.maxWidth='unset'; grid.appendChild(card); });
+      const ph = document.querySelector('.page-header h1');
+      if (ph) ph.textContent = `Resultados para "${q}"`;
+    }
+  } else if (cat) {
+    // Activate correct filter button
+    const btn = document.querySelector(`.filter-btn[data-filter="${cat}"]`);
+    if (btn) btn.click();
+    else filterCatalog('all');
+  } else {
+    filterCatalog('all');
+  }
+}
+
+/* ---- PLAYER PAGE INIT ---- */
+if (document.getElementById('lessonList')) {
+  const params = new URLSearchParams(window.location.search);
+  const courseId = parseInt(params.get('id') || '1');
+  const course = COURSES.find(c => c.id === courseId) || COURSES[0];
+
+  // Set titles
+  const ct = document.getElementById('courseTitleEl');
+  const lt = document.getElementById('lessonTitleEl');
+  if (ct) ct.textContent = course.title;
+  if (lt) lt.textContent = 'Selecione uma aula para começar';
+
+  // Set video thumb
+  const vImg = document.getElementById('videoThumb');
+  if (vImg) vImg.src = course.hero || course.thumb;
+
+  // Build lesson list
+  const list = document.getElementById('lessonList');
+  const lessonData = LESSONS[courseId] || LESSONS[1];
+
+  lessonData.forEach(module => {
+    const modHeader = document.createElement('div');
+    modHeader.className = 'module-header';
+    modHeader.innerHTML = `<h4>${escapeHtml(module.module)}</h4><span>${escapeHtml(String(module.lessons.length))} aulas</span>`;
+    list.appendChild(modHeader);
+
+    module.lessons.forEach((lesson, i) => {
+      const item = document.createElement('div');
+      item.className = 'lesson-item' + (lesson.done ? ' completed' : '') + (i === 0 ? ' active' : '');
+      item.innerHTML = `
+        <span class="lesson-number">${lesson.done ? '<i class="fas fa-check" style="color:var(--red)"></i>' : escapeHtml(String(lesson.id))}</span>
+        <div class="lesson-thumb">
+          <img src="${escapeHtml(lesson.thumb)}" alt="${escapeHtml(lesson.title)}" loading="lazy" />
+          ${lesson.done ? '<div class="done-overlay"><i class="fas fa-check"></i></div>' : ''}
+        </div>
+        <div class="lesson-details">
+          <h4>${escapeHtml(lesson.title)}</h4>
+          <span><i class="fas fa-clock" style="margin-right:4px"></i>${escapeHtml(lesson.duration)}</span>
+        </div>
+      `;
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        if (lt) lt.textContent = `Aula ${lesson.id}: ${lesson.title}`;
+        showToast(`Carregando: ${lesson.title}`, 'fa-play-circle');
+        if (vImg) vImg.src = lesson.thumb;
+      });
+      list.appendChild(item);
+    });
+  });
+}
+
+/* ---- MY COURSES PAGE ---- */
+if (document.getElementById('myCoursesGrid')) {
+  const grid = document.getElementById('myCoursesGrid');
+  const enrolled = COURSES.filter(c => c.progress !== undefined);
+  enrolled.forEach(c => {
+    const card = createCourseCard(c, { showProgress: c.progress > 0 });
+    card.style.minWidth = 'unset';
+    card.style.maxWidth = 'unset';
+    grid.appendChild(card);
+  });
+}
+
+/* ---- SUPABASE: logout e MY_LIST ---- */
+
+// MY_LIST: inicializado vazio; populado quando auth completa
+let MY_LIST = [];
+
+// Quando auth.js completar (evento vgr:auth-ready), atualizar MY_LIST e re-renderizar
+document.addEventListener('vgr:auth-ready', (e) => {
+  const user = e.detail;
+  if (!user) return;
+
+  // Sincronizar MY_LIST com a lista salva no perfil Supabase
+  MY_LIST = Array.isArray(user.myList) ? user.myList : [];
+
+  // Re-renderizar carrossel "Minha Lista" se estiver na index
+  if (document.getElementById('mylist')) {
+    const mylistCourses = COURSES.filter(c => MY_LIST.includes(c.id));
+    populateCarousel('mylist', mylistCourses);
+  }
+});
+
+// Logout via Supabase (intercepta todos os links/botões de "Sair")
+document.addEventListener('click', async (e) => {
+  const link = e.target.closest('a[href="login.html"]');
+  if (!link) return;
+  // Verificar se é o link de logout (contém ícone de sign-out ou texto "Sair")
+  if (link.textContent.includes('Sair') || link.querySelector('.fa-sign-out-alt')) {
+    e.preventDefault();
+    try {
+      if (window.supabaseClient) await supabaseClient.auth.signOut();
+    } catch (_) {}
+    window.location.href = 'login.html';
+  }
+});

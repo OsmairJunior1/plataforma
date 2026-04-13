@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termos de Uso e Política de Privacidade — VGR Academy</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --red: #e50914; --bg: #0f0f0f; --bg2: #141414; --bg3: #1a1a1a; --border: rgba(255,255,255,0.08); --white: #fff; --gray: #999; --gray2: #666; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--white); font-family: 'Inter', sans-serif; line-height: 1.7; }
+
+    /* NAV */
+    .t-nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 5%; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .t-logo { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; text-decoration: none; color: var(--white); }
+    .t-logo span { color: var(--red); }
+    .t-back { font-size: 0.82rem; color: var(--gray); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .t-back:hover { color: var(--white); }
+
+    /* HERO */
+    .t-hero { background: linear-gradient(135deg, #0f0f0f 0%, #1a0305 50%, #0f0f0f 100%); padding: 60px 5% 48px; border-bottom: 1px solid var(--border); }
+    .t-hero-inner { max-width: 860px; margin: 0 auto; }
+    .t-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 12px; }
+    .t-hero h1 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 900; line-height: 1.2; margin-bottom: 12px; }
+    .t-hero p { color: var(--gray); font-size: 0.88rem; }
+    .t-hero p strong { color: var(--white); }
+
+    /* TOC */
+    .t-toc { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 40px auto; max-width: 860px; }
+    .t-toc h3 { font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); margin-bottom: 14px; }
+    .t-toc ol { padding-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
+    .t-toc li { font-size: 0.82rem; }
+    .t-toc a { color: var(--gray); text-decoration: none; transition: color 0.2s; }
+    .t-toc a:hover { color: var(--red); }
+    @media (max-width: 600px) { .t-toc ol { grid-template-columns: 1fr; } }
+
+    /* CONTENT */
+    .t-content { max-width: 860px; margin: 0 auto; padding: 0 5% 80px; }
+
+    .t-divider { border: none; border-top: 1px solid var(--border); margin: 56px 0; }
+
+    .t-section { margin-bottom: 48px; scroll-margin-top: 80px; }
+    .t-section-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+    .t-section h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .t-section h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 10px; color: var(--white); }
+    .t-section p { font-size: 0.9rem; color: rgba(255,255,255,0.78); margin-bottom: 12px; }
+    .t-section ul, .t-section ol { padding-left: 20px; margin-bottom: 12px; }
+    .t-section li { font-size: 0.9rem; color: rgba(255,255,255,0.78); margin-bottom: 6px; }
+    .t-section strong { color: var(--white); }
+    .t-section a { color: var(--red); text-decoration: none; }
+    .t-section a:hover { text-decoration: underline; }
+
+    /* HIGHLIGHT BOX */
+    .t-box { background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+    .t-box p { margin: 0; font-size: 0.85rem; }
+    .t-box.info { border-left-color: #2196f3; }
+    .t-box.warn { border-left-color: #f5a623; }
+
+    /* RIGHTS GRID */
+    .rights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 16px 0; }
+    .right-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .right-card i { color: var(--red); font-size: 1rem; margin-bottom: 8px; display: block; }
+    .right-card strong { font-size: 0.82rem; display: block; margin-bottom: 4px; }
+    .right-card span { font-size: 0.78rem; color: var(--gray); }
+
+    /* TABLE */
+    .t-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.84rem; }
+    .t-table th { background: var(--bg3); color: var(--gray); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    .t-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(255,255,255,0.78); vertical-align: top; }
+    .t-table tr:last-child td { border-bottom: none; }
+
+    /* UPDATED */
+    .t-updated { text-align: center; padding: 32px 5%; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--gray2); }
+    .t-updated a { color: var(--gray); text-decoration: none; }
+    .t-updated a:hover { color: var(--red); }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="t-nav">
+    <a href="landing.html" class="t-logo">VGR<span>ACADEMY</span></a>
+    <a href="landing.html" class="t-back"><i class="fas fa-arrow-left"></i> Voltar ao site</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="t-hero">
+    <div class="t-hero-inner">
+      <div class="t-eyebrow">Documentos Legais</div>
+      <h1>Termos de Uso &amp; Política de Privacidade</h1>
+      <p>
+        Última atualização: <strong>10 de abril de 2026</strong> &nbsp;·&nbsp;
+        Versão: <strong>1.0</strong> &nbsp;·&nbsp;
+        Empresa: <strong>MRJ Assessoria Ltda — CNPJ 51.598.440/0001-23</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="t-content">
+
+    <!-- ÍNDICE -->
+    <div class="t-toc">
+      <h3><i class="fas fa-list" style="margin-right:6px"></i> Índice</h3>
+      <ol>
+        <li><a href="#identificacao">Identificação do Controlador</a></li>
+        <li><a href="#aceitacao">Aceitação dos Termos</a></li>
+        <li><a href="#servicos">Descrição dos Serviços</a></li>
+        <li><a href="#cadastro">Cadastro e Conta</a></li>
+        <li><a href="#planos">Planos e Pagamentos</a></li>
+        <li><a href="#cancelamento">Cancelamento e Reembolso</a></li>
+        <li><a href="#propriedade">Propriedade Intelectual</a></li>
+        <li><a href="#conduta">Conduta do Usuário</a></li>
+        <li><a href="#dados">Dados Pessoais Coletados</a></li>
+        <li><a href="#finalidade">Finalidade e Base Legal</a></li>
+        <li><a href="#compartilhamento">Compartilhamento de Dados</a></li>
+        <li><a href="#cookies">Cookies e Rastreamento</a></li>
+        <li><a href="#retencao">Retenção e Exclusão</a></li>
+        <li><a href="#direitos">Seus Direitos (LGPD)</a></li>
+        <li><a href="#seguranca">Segurança</a></li>
+        <li><a href="#menores">Menores de Idade</a></li>
+        <li><a href="#alteracoes">Alterações neste Documento</a></li>
+        <li><a href="#contato">Contato e DPO</a></li>
+      </ol>
+    </div>
+
+    <!-- ============================
+         PARTE I — TERMOS DE USO
+         ============================ -->
+    <div class="t-section-label" style="margin-top:8px">Parte I</div>
+    <h2 style="font-size:1.6rem;font-weight:900;margin-bottom:32px">Termos de Uso</h2>
+
+    <div class="t-section" id="identificacao">
+      <div class="t-section-label">Seção 1</div>
+      <h2>Identificação do Controlador</h2>
+      <p>A plataforma <strong>VGR Academy</strong> é operada por:</p>
+      <div class="t-box">
+        <p>
+          <strong>MRJ Assessoria Ltda</strong><br>
+          CNPJ: 51.598.440/0001-23<br>
+          Endereço: Estrada dos Bandeirantes, 8751, Camorim, Rio de Janeiro – RJ<br>
+          E-mail geral: <a href="mailto:contato@vgracademy.com.br">contato@vgracademy.com.br</a><br>
+          Site: <a href="https://vgracademy.com.br">vgracademy.com.br</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="t-section" id="aceitacao">
+      <div class="t-section-label">Seção 2</div>
+      <h2>Aceitação dos Termos</h2>
+      <p>Ao acessar, se cadastrar ou utilizar qualquer funcionalidade da plataforma VGR Academy, você declara que leu, compreendeu e concorda integralmente com estes Termos de Uso e com a Política de Privacidade.</p>
+      <p>Caso não concorde com qualquer disposição deste documento, você não deve utilizar a plataforma.</p>
+      <div class="t-box warn">
+        <p><i class="fas fa-exclamation-triangle" style="color:#f5a623;margin-right:6px"></i> <strong>Atenção:</strong> ao concluir o cadastro ou efetuar uma compra, você manifesta seu consentimento livre, informado e inequívoco com estes termos.</p>
+      </div>
+    </div>
+
+    <div class="t-section" id="servicos">
+      <div class="t-section-label">Seção 3</div>
+      <h2>Descrição dos Serviços</h2>
+      <p>A VGR Academy é uma plataforma digital de educação voltada a empresários e profissionais, que oferece:</p>
+      <ul>
+        <li>Cursos em vídeo sobre networking, vendas, gestão e negócios</li>
+        <li>Trilhas de aprendizado estruturadas</li>
+        <li>Fórum de comunidade para troca de experiências</li>
+        <li>Sistema de gamificação com pontos, badges e ranking</li>
+        <li>Análise e diagnóstico do negócio do aluno</li>
+        <li>Acesso via navegador em qualquer dispositivo</li>
+      </ul>
+      <p>Os serviços são prestados no modelo <strong>SaaS (Software as a Service)</strong>, com acesso mediante assinatura anual.</p>
+    </div>
+
+    <div class="t-section" id="cadastro">
+      <div class="t-section-label">Seção 4</div>
+      <h2>Cadastro e Conta</h2>
+      <p>Para acessar os conteúdos da plataforma, é necessário criar uma conta fornecendo:</p>
+      <ul>
+        <li>Nome completo</li>
+        <li>Endereço de e-mail válido</li>
+        <li>Senha de acesso</li>
+      </ul>
+      <p>O usuário é responsável por manter a confidencialidade de suas credenciais de acesso. Qualquer atividade realizada através da sua conta é de sua inteira responsabilidade.</p>
+      <p>É vedado compartilhar seu acesso com terceiros. A VGR Academy reserva-se o direito de suspender contas suspeitas de uso compartilhado indevido.</p>
+      <h3>Veracidade dos Dados</h3>
+      <p>O usuário declara que todas as informações fornecidas no cadastro são verdadeiras, completas e atualizadas. O fornecimento de dados falsos pode acarretar o cancelamento imediato da conta, sem direito a reembolso.</p>
+    </div>
+
+    <div class="t-section" id="planos">
+      <div class="t-section-label">Seção 5</div>
+      <h2>Planos e Pagamentos</h2>
+      <h3>Plano Gratuito</h3>
+      <p>Permite acesso a conteúdos selecionados sem custo, mediante cadastro.</p>
+      <h3>Plano Premium</h3>
+      <p>Acesso completo a todos os cursos, trilhas, fórum e recursos exclusivos. O plano Premium é cobrado na modalidade de <strong>assinatura anual</strong>, podendo ser parcelado em até <strong>12 (doze) vezes</strong> no cartão de crédito.</p>
+      <div class="t-box">
+        <p><i class="fas fa-credit-card" style="color:var(--red);margin-right:6px"></i> Os pagamentos são processados pela plataforma <strong>Stripe</strong> (Stripe Payments Europe, Ltd.), sujeitos aos termos e condições do processador. A VGR Academy não armazena dados de cartão de crédito em seus servidores.</p>
+      </div>
+      <p>Os preços podem ser atualizados a qualquer momento. Assinaturas ativas têm o valor garantido até o final do período contratado.</p>
+    </div>
+
+    <div class="t-section" id="cancelamento">
+      <div class="t-section-label">Seção 6</div>
+      <h2>Cancelamento e Reembolso</h2>
+      <h3>Direito de Arrependimento</h3>
+      <p>Nos termos do <strong>Art. 49 do Código de Defesa do Consumidor (CDC)</strong>, o usuário que realizou a compra pela internet pode solicitar o cancelamento e reembolso integral em até <strong>7 (sete) dias corridos</strong> a partir da data da contratação, sem necessidade de justificativa.</p>
+      <h3>Cancelamento após 7 dias</h3>
+      <p>Após o prazo de arrependimento, não há reembolso proporcional pelo período não utilizado. O acesso permanece ativo até o término do período anual contratado.</p>
+      <h3>Como solicitar</h3>
+      <p>Para cancelamentos, envie um e-mail para <a href="mailto:contato@vgracademy.com.br">contato@vgracademy.com.br</a> com o assunto "Cancelamento" informando o e-mail da conta.</p>
+    </div>
+
+    <div class="t-section" id="propriedade">
+      <div class="t-section-label">Seção 7</div>
+      <h2>Propriedade Intelectual</h2>
+      <p>Todo o conteúdo disponível na plataforma — incluindo vídeos, textos, imagens, logotipos, trilhas, exercícios e materiais complementares — é de propriedade exclusiva da <strong>MRJ Assessoria Ltda</strong> ou licenciado por terceiros, protegido pela Lei n.º 9.610/1998 (Lei de Direitos Autorais) e demais normas aplicáveis.</p>
+      <p>É expressamente proibido:</p>
+      <ul>
+        <li>Reproduzir, copiar, distribuir ou comercializar qualquer conteúdo da plataforma</li>
+        <li>Realizar download ou gravação não autorizada de vídeoaulas</li>
+        <li>Criar obras derivadas sem autorização prévia e por escrito</li>
+        <li>Utilizar o conteúdo para fins comerciais sem licença</li>
+      </ul>
+    </div>
+
+    <div class="t-section" id="conduta">
+      <div class="t-section-label">Seção 8</div>
+      <h2>Conduta do Usuário</h2>
+      <p>Ao utilizar a plataforma, o usuário compromete-se a:</p>
+      <ul>
+        <li>Respeitar os demais membros da comunidade</li>
+        <li>Não publicar conteúdo ofensivo, discriminatório, ilegal ou de spam</li>
+        <li>Não tentar acessar áreas restritas ou sistemas da plataforma</li>
+        <li>Não utilizar ferramentas automatizadas (bots, scrapers) sem autorização</li>
+        <li>Manter seus dados de cadastro atualizados</li>
+      </ul>
+      <p>O descumprimento dessas regras pode resultar em suspensão ou encerramento permanente da conta, sem direito a reembolso.</p>
+    </div>
+
+    <hr class="t-divider">
+
+    <!-- ============================
+         PARTE II — PRIVACIDADE
+         ============================ -->
+    <div id="privacidade" class="t-section-label">Parte II</div>
+    <h2 style="font-size:1.6rem;font-weight:900;margin-bottom:32px">Política de Privacidade</h2>
+
+    <div class="t-box info" style="margin-bottom:32px">
+      <p><i class="fas fa-shield-halved" style="color:#2196f3;margin-right:8px"></i> Esta Política de Privacidade foi elaborada em conformidade com a <strong>Lei n.º 13.709/2018 (Lei Geral de Proteção de Dados — LGPD)</strong> e com o <strong>Marco Civil da Internet (Lei n.º 12.965/2014)</strong>.</p>
+    </div>
+
+    <div class="t-section" id="dados">
+      <div class="t-section-label">Seção 9</div>
+      <h2>Dados Pessoais Coletados</h2>
+      <p>Coletamos os seguintes dados pessoais de nossos usuários:</p>
+
+      <table class="t-table">
+        <thead>
+          <tr>
+            <th>Dado</th>
+            <th>Quando é coletado</th>
+            <th>Obrigatoriedade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Nome completo</strong></td><td>Cadastro na plataforma</td><td>Obrigatório</td></tr>
+          <tr><td><strong>E-mail</strong></td><td>Cadastro na plataforma</td><td>Obrigatório</td></tr>
+          <tr><td><strong>Senha</strong> (hash criptografado)</td><td>Cadastro na plataforma</td><td>Obrigatório</td></tr>
+          <tr><td><strong>CPF</strong></td><td>Contratação do plano Premium</td><td>Obrigatório (plano pago)</td></tr>
+          <tr><td><strong>Telefone / WhatsApp</strong></td><td>Cadastro ou perfil</td><td>Opcional</td></tr>
+          <tr><td><strong>Dados de pagamento</strong> (processados pela Stripe)</td><td>Contratação do plano Premium</td><td>Obrigatório (plano pago)</td></tr>
+          <tr><td><strong>Dados de uso</strong> (aulas assistidas, progresso, tempo)</td><td>Uso da plataforma</td><td>Automático</td></tr>
+          <tr><td><strong>Endereço IP e dados de navegação</strong></td><td>Acesso ao site</td><td>Automático</td></tr>
+          <tr><td><strong>Cookies e identificadores</strong></td><td>Acesso ao site</td><td>Automático</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Dados Sensíveis</h3>
+      <p>A VGR Academy <strong>não coleta intencionalmente</strong> dados pessoais sensíveis (saúde, origem racial, convicção religiosa, etc.) conforme definidos no Art. 5.º, II da LGPD.</p>
+    </div>
+
+    <div class="t-section" id="finalidade">
+      <div class="t-section-label">Seção 10</div>
+      <h2>Finalidade e Base Legal (LGPD)</h2>
+      <table class="t-table">
+        <thead>
+          <tr>
+            <th>Finalidade</th>
+            <th>Base Legal (Art. 7.º LGPD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Criação e gerenciamento de conta de acesso</td><td>Execução de contrato (inciso V)</td></tr>
+          <tr><td>Prestação dos serviços educacionais contratados</td><td>Execução de contrato (inciso V)</td></tr>
+          <tr><td>Processamento de pagamentos</td><td>Execução de contrato (inciso V)</td></tr>
+          <tr><td>Emissão de nota fiscal e obrigações tributárias</td><td>Cumprimento de obrigação legal (inciso II)</td></tr>
+          <tr><td>Envio de comunicações sobre o curso e atualizações</td><td>Legítimo interesse / consentimento (incisos IX / I)</td></tr>
+          <tr><td>Envio de comunicações de marketing e ofertas</td><td>Consentimento (inciso I)</td></tr>
+          <tr><td>Análise de uso para melhoria da plataforma</td><td>Legítimo interesse (inciso IX)</td></tr>
+          <tr><td>Prevenção a fraudes e segurança</td><td>Legítimo interesse (inciso IX)</td></tr>
+          <tr><td>Personalização da experiência do usuário</td><td>Legítimo interesse / consentimento (incisos IX / I)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="t-section" id="compartilhamento">
+      <div class="t-section-label">Seção 11</div>
+      <h2>Compartilhamento de Dados</h2>
+      <p>Seus dados pessoais podem ser compartilhados com os seguintes terceiros, estritamente para as finalidades indicadas:</p>
+
+      <table class="t-table">
+        <thead>
+          <tr>
+            <th>Terceiro</th>
+            <th>Finalidade</th>
+            <th>País</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Stripe</strong></td><td>Processamento de pagamentos</td><td>EUA / Irlanda</td></tr>
+          <tr><td><strong>Supabase</strong></td><td>Infraestrutura de banco de dados e autenticação</td><td>EUA</td></tr>
+          <tr><td><strong>Google Analytics</strong></td><td>Análise de tráfego e comportamento de uso</td><td>EUA</td></tr>
+          <tr><td><strong>Meta (Facebook Pixel)</strong></td><td>Mensuração de campanhas e remarketing</td><td>EUA</td></tr>
+          <tr><td><strong>Autoridades públicas</strong></td><td>Cumprimento de obrigação legal ou ordem judicial</td><td>Brasil</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Transferência Internacional</h3>
+      <p>Os serviços Stripe, Supabase, Google Analytics e Meta Pixel implicam transferência de dados para fora do Brasil. Essas transferências ocorrem com base no <strong>Art. 33, inciso II da LGPD</strong> (adequação reconhecida pela ANPD) ou mediante <strong>cláusulas contratuais padrão</strong> que asseguram nível de proteção equivalente ao estabelecido pela legislação brasileira.</p>
+      <p><strong>Não vendemos dados pessoais</strong> a terceiros para nenhuma finalidade.</p>
+    </div>
+
+    <div class="t-section" id="cookies">
+      <div class="t-section-label">Seção 12</div>
+      <h2>Cookies e Rastreamento</h2>
+      <p>Utilizamos cookies e tecnologias similares para melhorar sua experiência. Os tipos utilizados são:</p>
+
+      <h3>Cookies Essenciais</h3>
+      <p>Necessários para o funcionamento da plataforma (autenticação, sessão, preferências). <strong>Não podem ser desativados</strong> sem comprometer o funcionamento do site.</p>
+
+      <h3>Cookies Analíticos — Google Analytics</h3>
+      <p>Coletam dados anônimos sobre como os usuários interagem com o site (páginas visitadas, tempo de permanência, origem do tráfego). Utilizamos esses dados para melhorar a plataforma. Você pode optar por não ser rastreado em <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">tools.google.com/dlpage/gaoptout</a>.</p>
+
+      <h3>Cookies de Marketing — Meta Pixel</h3>
+      <p>Utilizados para mensurar a eficácia de anúncios no Facebook e Instagram, e para exibir anúncios personalizados. Você pode gerenciar suas preferências de publicidade em <a href="https://www.facebook.com/ads/preferences" target="_blank" rel="noopener">facebook.com/ads/preferences</a>.</p>
+
+      <h3>Como gerenciar cookies</h3>
+      <p>Você pode configurar seu navegador para recusar ou excluir cookies. Consulte a documentação do seu navegador para instruções específicas. Note que desabilitar certos cookies pode afetar funcionalidades da plataforma.</p>
+    </div>
+
+    <div class="t-section" id="retencao">
+      <div class="t-section-label">Seção 13</div>
+      <h2>Retenção e Exclusão de Dados</h2>
+      <p>Mantemos seus dados pessoais pelo tempo necessário para as finalidades descritas ou conforme exigido por lei:</p>
+      <table class="t-table">
+        <thead>
+          <tr><th>Tipo de Dado</th><th>Prazo de Retenção</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Dados de conta (nome, e-mail)</td><td>Enquanto a conta estiver ativa + 5 anos após encerramento</td></tr>
+          <tr><td>Dados fiscais e de pagamento (CPF, transações)</td><td>10 anos (obrigação legal — Código Tributário Nacional)</td></tr>
+          <tr><td>Logs de acesso (IP, data/hora)</td><td>6 meses (Marco Civil da Internet, Art. 15)</td></tr>
+          <tr><td>Dados de progresso e uso da plataforma</td><td>Enquanto a conta estiver ativa</td></tr>
+          <tr><td>Comunicações de marketing (consentimento)</td><td>Até revogação do consentimento</td></tr>
+        </tbody>
+      </table>
+      <p>Após os prazos acima, os dados são eliminados de forma segura ou anonimizados.</p>
+    </div>
+
+    <div class="t-section" id="direitos">
+      <div class="t-section-label">Seção 14</div>
+      <h2>Seus Direitos como Titular (LGPD — Art. 18)</h2>
+      <p>Você tem os seguintes direitos em relação aos seus dados pessoais:</p>
+      <div class="rights-grid">
+        <div class="right-card">
+          <i class="fas fa-eye"></i>
+          <strong>Acesso</strong>
+          <span>Solicitar confirmação da existência e acesso aos seus dados</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-pen"></i>
+          <strong>Correção</strong>
+          <span>Solicitar correção de dados incompletos, inexatos ou desatualizados</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-trash"></i>
+          <strong>Eliminação</strong>
+          <span>Solicitar exclusão de dados tratados com base no consentimento</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-ban"></i>
+          <strong>Bloqueio / Anonimização</strong>
+          <span>Solicitar o bloqueio ou anonimização de dados desnecessários</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-file-export"></i>
+          <strong>Portabilidade</strong>
+          <span>Receber seus dados em formato estruturado e interoperável</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-hand-paper"></i>
+          <strong>Revogação</strong>
+          <span>Revogar o consentimento a qualquer momento, sem custo</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-info-circle"></i>
+          <strong>Informação</strong>
+          <span>Obter informações sobre com quem seus dados foram compartilhados</span>
+        </div>
+        <div class="right-card">
+          <i class="fas fa-gavel"></i>
+          <strong>Oposição</strong>
+          <span>Opor-se a tratamentos realizados com base em legítimo interesse</span>
+        </div>
+      </div>
+      <div class="t-box" style="margin-top:16px">
+        <p>Para exercer qualquer um desses direitos, entre em contato com nosso DPO pelo e-mail <a href="mailto:dpo@vgracademy.com.br">dpo@vgracademy.com.br</a>. Responderemos em até <strong>15 dias úteis</strong>. Caso não fique satisfeito, você pode apresentar reclamação à <strong>ANPD</strong> (Autoridade Nacional de Proteção de Dados) em <a href="https://www.gov.br/anpd" target="_blank" rel="noopener">gov.br/anpd</a>.</p>
+      </div>
+    </div>
+
+    <div class="t-section" id="seguranca">
+      <div class="t-section-label">Seção 15</div>
+      <h2>Segurança dos Dados</h2>
+      <p>Adotamos medidas técnicas e organizacionais adequadas para proteger seus dados pessoais contra acesso não autorizado, perda, destruição ou divulgação indevida, incluindo:</p>
+      <ul>
+        <li>Criptografia de senhas (hash SHA-256 com salt)</li>
+        <li>Comunicação via HTTPS/TLS</li>
+        <li>Controle de acesso por função (administrador / usuário)</li>
+        <li>Rate limiting para prevenção de ataques de força bruta</li>
+        <li>Infraestrutura em nuvem com controles de segurança (Supabase)</li>
+      </ul>
+      <p>Em caso de incidente de segurança que possa acarretar risco ou dano aos titulares, comunicaremos a <strong>ANPD</strong> e os usuários afetados no prazo previsto pela LGPD (Art. 48).</p>
+    </div>
+
+    <div class="t-section" id="menores">
+      <div class="t-section-label">Seção 16</div>
+      <h2>Menores de Idade</h2>
+      <p>A plataforma VGR Academy é destinada exclusivamente a <strong>maiores de 18 anos</strong>. Não coletamos intencionalmente dados de menores de idade.</p>
+      <p>Caso identifiquemos que dados de um menor foram coletados sem o devido consentimento dos responsáveis legais, providenciaremos a exclusão imediata.</p>
+    </div>
+
+    <div class="t-section" id="alteracoes">
+      <div class="t-section-label">Seção 17</div>
+      <h2>Alterações neste Documento</h2>
+      <p>A VGR Academy reserva-se o direito de atualizar estes Termos de Uso e Política de Privacidade periodicamente. Alterações relevantes serão comunicadas por:</p>
+      <ul>
+        <li>Aviso em destaque na plataforma</li>
+        <li>E-mail para os usuários cadastrados</li>
+      </ul>
+      <p>A data da última atualização está sempre indicada no topo deste documento. O uso continuado da plataforma após a notificação implica aceitação das alterações.</p>
+    </div>
+
+    <div class="t-section" id="contato">
+      <div class="t-section-label">Seção 18</div>
+      <h2>Contato e Encarregado de Dados (DPO)</h2>
+      <p>O Encarregado de Proteção de Dados (DPO) nomeado pela MRJ Assessoria Ltda, nos termos do Art. 41 da LGPD, é:</p>
+      <div class="t-box">
+        <p>
+          <strong>Osmair de Jesus Ferreira Junior</strong><br>
+          E-mail do DPO: <a href="mailto:dpo@vgracademy.com.br">dpo@vgracademy.com.br</a><br>
+          Para dúvidas gerais: <a href="mailto:contato@vgracademy.com.br">contato@vgracademy.com.br</a><br>
+          Endereço: Estrada dos Bandeirantes, 8751, Camorim, Rio de Janeiro – RJ, CEP 22783-110
+        </p>
+      </div>
+      <p>Respondemos a todas as solicitações relacionadas à privacidade em até <strong>15 dias úteis</strong>.</p>
+    </div>
+
+  </div><!-- /t-content -->
+
+  <div class="t-updated">
+    <p>© 2026 MRJ Assessoria Ltda — CNPJ 51.598.440/0001-23 &nbsp;·&nbsp; Todos os direitos reservados</p>
+    <p style="margin-top:6px">
+      <a href="landing.html">Início</a> &nbsp;·&nbsp;
+      <a href="mailto:dpo@vgracademy.com.br">dpo@vgracademy.com.br</a> &nbsp;·&nbsp;
+      <a href="https://www.gov.br/anpd" target="_blank" rel="noopener">ANPD</a>
+    </p>
+  </div>
+
+</body>
+</html>
