@@ -30,8 +30,8 @@ function getAdminState() {
   return { ...DEFAULT_STATE, courses: COURSES };
 }
 
-function applyAdminState() {
-  const state = getAdminState();
+function applyAdminState(overrideState) {
+  const state = overrideState || getAdminState();
   if (!state) return;
 
   // --- Plataforma: logo e nome ---
@@ -156,25 +156,22 @@ applyAdminState();
 (async function loadFromSupabase() {
   if (!window.SupabaseDB) return;
 
+  const remoteState = { ...getAdminState() };
+  let changed = false;
+
+  // --- Settings (hero, landing, plataforma) ---
   try {
-    const [settingsRow, courses] = await Promise.all([
-      SupabaseDB.getSettings(),
-      SupabaseDB.getCourses({ activeOnly: true }),
-    ]);
-
-    const remoteState = { ...getAdminState() };
-    let changed = false;
-
+    const settingsRow = await SupabaseDB.getSettings();
     if (settingsRow) {
       const s = SupabaseDB.settingsToState(settingsRow);
       remoteState.platform = s.platform;
       remoteState.hero     = s.hero;
       remoteState.landing  = s.landing;
       if (s.featured?.length) remoteState.featured = s.featured;
-      if (s.trails?.length) remoteState.trails = s.trails;
+      if (s.trails?.length)   remoteState.trails   = s.trails;
       changed = true;
 
-      // Sincroniza hero → vgracademy_db para próximas visitas lerem sem Supabase
+      // Sincroniza hero → vgracademy_db para cache offline
       if (s.hero && typeof DB !== 'undefined') {
         DB.savePlatform({
           heroType:           s.hero.type            || 'video',
@@ -187,28 +184,31 @@ applyAdminState();
           heroDescription:    s.hero.description     || '',
         });
       }
-    }
 
+      // Aplica hero/plataforma imediatamente, sem esperar os cursos
+      try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
+      applyAdminState(remoteState);
+    }
+  } catch(e) {
+    console.warn('[app] getSettings falhou:', e.message);
+  }
+
+  // --- Cursos (independente dos settings) ---
+  try {
+    const courses = await SupabaseDB.getCourses({ activeOnly: true });
     if (courses?.length) {
       remoteState.courses = courses.map(c => SupabaseDB.courseToLocal(c));
-      // Usa featured_ids (ordem salva pelo admin) como prioridade.
-      // Só usa flag featured dos cursos como fallback se featured_ids não existir.
       if (!remoteState.featured?.length) {
         const featFromDB = courses.filter(c => c.featured).map(c => c.id);
         if (featFromDB.length) remoteState.featured = featFromDB;
       }
       changed = true;
-    }
-
-    if (changed) {
-      // Salva no cache local e re-aplica ao DOM
       try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
-      applyAdminState();
-      // Recarrega carrosséis se a função existir
+      applyAdminState(remoteState);
       if (typeof renderCarousels === 'function') renderCarousels();
     }
   } catch(e) {
-    console.warn('[app] loadFromSupabase falhou, usando cache local:', e.message);
+    console.warn('[app] getCourses falhou:', e.message);
   }
 })();
 
