@@ -251,19 +251,22 @@
       if (!bg || !url) return;
       if (type === 'video') {
         const vid = document.createElement('video');
-        // iOS Safari requer os atributos HTML — propriedades JS sozinhas não funcionam
-        vid.setAttribute('autoplay', '');
+        // Ordem importa: muted ANTES de tudo (Android + iOS)
+        vid.muted = true;
         vid.setAttribute('muted', '');
+        vid.setAttribute('autoplay', '');
         vid.setAttribute('loop', '');
         vid.setAttribute('playsinline', '');
         vid.setAttribute('webkit-playsinline', '');
-        vid.muted = true;
+        vid.setAttribute('preload', 'auto');
         if (poster) vid.poster = poster;
         vid.src = url;
         if (img) img.replaceWith(vid); else bg.insertBefore(vid, bg.firstChild);
-        // iOS requer load() + play() explícitos após inserir no DOM
+        // Fallback: tenta play após canplay (Android Chrome às vezes precisa disso)
+        const tryPlay = () => vid.play().catch(() => {});
+        vid.addEventListener('canplay', tryPlay, { once: true });
         vid.load();
-        vid.play().catch(() => {});
+        tryPlay();
       } else {
         if (img) img.src = url;
       }

@@ -87,17 +87,20 @@ function applyAdminState(overrideState) {
     if (hero.type === 'video') {
       const vid = document.createElement('video');
       vid.className = 'hero-video';
-      vid.setAttribute('autoplay', '');
+      vid.muted = true;
       vid.setAttribute('muted', '');
+      vid.setAttribute('autoplay', '');
       vid.setAttribute('loop', '');
       vid.setAttribute('playsinline', '');
       vid.setAttribute('webkit-playsinline', '');
-      vid.muted = true;
+      vid.setAttribute('preload', 'auto');
       if (hero.poster) vid.poster = hero.poster;
       vid.src = hero.url || '';
       heroBg.insertBefore(vid, overlay);
+      const _tryPlay = () => vid.play().catch(() => {});
+      vid.addEventListener('canplay', _tryPlay, { once: true });
       vid.load();
-      vid.play().catch(() => {});
+      _tryPlay();
     } else {
       const img = document.createElement('img');
       img.className = 'hero-img';
@@ -243,11 +246,15 @@ applyAdminState();
             _vid.setAttribute('playsinline', '');
             _vid.setAttribute('webkit-playsinline', '');
             _vid.muted = true;
+            _vid.setAttribute('muted', '');
+            _vid.setAttribute('preload', 'auto');
             if (h.poster) _vid.poster = h.poster;
             _vid.src = h.url;
             _bg.insertBefore(_vid, _ov || null);
+            const _tp = () => _vid.play().catch(() => {});
+            _vid.addEventListener('canplay', _tp, { once: true });
             _vid.load();
-            _vid.play().catch(() => {});
+            _tp();
           }
         }
       } catch(_e) {

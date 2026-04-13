@@ -27,10 +27,11 @@
 .landing-lead { font-size: clamp(1rem, 1.8vw, 1.2rem); color: rgba(255,255,255,0.8); line-height: 1.7; margin-bottom: 32px; max-width: 560px; }
 .landing-cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
 .landing-cta-row .btn-primary { font-size: 1rem; padding: 14px 32px; }
-.landing-social-proof { display: flex; align-items: center; gap: 14px; }
-.landing-avatars { display: flex; }
+.landing-social-proof { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; }
+.landing-avatars { display: flex; flex-shrink: 0; padding-right: 8px; }
 .landing-avatars img { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--bg); margin-right: -8px; }
-.landing-social-text { font-size: 0.82rem; color: rgba(255,255,255,0.6); }
+.landing-avatars img:last-child { margin-right: 0; }
+.landing-social-text { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
 .landing-social-text strong { color: white; }
 
 /* STATS */
