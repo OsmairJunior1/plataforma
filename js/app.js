@@ -188,6 +188,61 @@ applyAdminState();
       // Aplica hero/plataforma imediatamente, sem esperar os cursos
       try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
       applyAdminState(remoteState);
+
+      // Atualização direta e incondicional do hero — garante que
+      // os elementos sejam atualizados independente de qualquer
+      // condição dentro de applyAdminState().
+      try {
+        const _esc = typeof escapeHtml === 'function'
+          ? escapeHtml
+          : (x => String(x == null ? '' : x)
+              .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+              .replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
+        const h = s.hero;
+
+        const _badge = document.getElementById('heroBadgeText');
+        if (_badge) _badge.textContent = h.badge || 'Em Destaque';
+
+        const _title = document.getElementById('heroTitleEl');
+        if (_title) {
+          const hl = h.titleHighlight !== false;
+          _title.innerHTML = _esc(h.titleLine1 || '')
+            + '<br /><span style="color:'
+            + (hl ? 'var(--red)' : 'inherit') + '">'
+            + _esc(h.titleLine2 || '') + '</span>';
+        }
+
+        const _desc = document.getElementById('heroDescEl');
+        if (_desc) _desc.textContent = h.description || '';
+
+        const _bg = document.getElementById('heroBg');
+        if (_bg && h.url) {
+          _bg.querySelectorAll('video, img.hero-video, img.hero-img').forEach(el => el.remove());
+          const _ov = _bg.querySelector('.hero-overlay');
+          if (h.type === 'image') {
+            const _img = document.createElement('img');
+            _img.className = 'hero-img';
+            _img.src = h.url;
+            _img.alt = 'Hero';
+            _bg.insertBefore(_img, _ov || null);
+          } else {
+            const _vid = document.createElement('video');
+            _vid.className = 'hero-video';
+            _vid.autoplay = true;
+            _vid.muted = true;
+            _vid.loop = true;
+            _vid.setAttribute('playsinline', '');
+            if (h.poster) _vid.poster = h.poster;
+            const _src = document.createElement('source');
+            _src.src = h.url;
+            _src.type = 'video/mp4';
+            _vid.appendChild(_src);
+            _bg.insertBefore(_vid, _ov || null);
+          }
+        }
+      } catch(_e) {
+        // silently ignore DOM update errors
+      }
     }
   } catch(e) {
     console.warn('[app] getSettings falhou:', e.message);
