@@ -257,11 +257,13 @@
         vid.setAttribute('loop', '');
         vid.setAttribute('playsinline', '');
         vid.setAttribute('webkit-playsinline', '');
-        vid.muted = true; // redundante mas necessário para alguns navegadores
+        vid.muted = true;
         if (poster) vid.poster = poster;
-        vid.src = url; // src direto é mais confiável no iOS que <source>
-        vid.type = 'video/mp4';
+        vid.src = url;
         if (img) img.replaceWith(vid); else bg.insertBefore(vid, bg.firstChild);
+        // iOS requer load() + play() explícitos após inserir no DOM
+        vid.load();
+        vid.play().catch(() => {});
       } else {
         if (img) img.src = url;
       }

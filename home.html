@@ -273,6 +273,8 @@
           if (data.hero_poster) vid.poster = data.hero_poster;
           vid.src = data.hero_url;
           bg.insertBefore(vid, ov);
+          vid.load();
+          vid.play().catch(() => {});
         }
       }
       // Botão "Assistir Agora" — busca o curso em destaque e abre o player

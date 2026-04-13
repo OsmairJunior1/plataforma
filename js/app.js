@@ -96,6 +96,8 @@ function applyAdminState(overrideState) {
       if (hero.poster) vid.poster = hero.poster;
       vid.src = hero.url || '';
       heroBg.insertBefore(vid, overlay);
+      vid.load();
+      vid.play().catch(() => {});
     } else {
       const img = document.createElement('img');
       img.className = 'hero-img';
@@ -244,6 +246,8 @@ applyAdminState();
             if (h.poster) _vid.poster = h.poster;
             _vid.src = h.url;
             _bg.insertBefore(_vid, _ov || null);
+            _vid.load();
+            _vid.play().catch(() => {});
           }
         }
       } catch(_e) {

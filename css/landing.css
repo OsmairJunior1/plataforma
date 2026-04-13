@@ -90,6 +90,29 @@
 
 /* RESPONSIVE */
 @media (max-width: 640px) {
+  /* Navbar: força altura fixa e botões numa linha só */
+  .navbar { height: auto; min-height: var(--navbar-h); padding: 10px 4%; flex-wrap: nowrap; }
+  .navbar-right { gap: 8px; flex-shrink: 0; }
+  .btn-primary.btn-sm,
+  .btn-secondary.btn-sm {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  /* Hero: padding-top generoso para compensar navbar variável */
+  .landing-hero {
+    padding-top: 110px;
+    padding-bottom: 60px;
+    min-height: auto;
+  }
+
+  .landing-h1 { font-size: 2rem; }
+  .landing-lead { font-size: 0.9rem; }
+  .landing-cta-row { flex-direction: column; gap: 10px; }
+  .landing-cta-row .btn-primary { font-size: 0.95rem; padding: 12px 24px; text-align: center; }
+
   .landing-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-cell { border-right: 1px solid var(--border); }
   .stat-cell:nth-child(2n) { border-right: none; }
