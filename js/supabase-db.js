@@ -102,6 +102,8 @@ const SupabaseDB = {
         featured:      course.featured      || false,
         sort_order:    course.sort_order    || 0,
         plan_required: course.planRequired  || 'free',
+        watch_url:     course.watchUrl      || '',
+        details:       course.details       || '',
         updated_at:  new Date().toISOString(),
       };
       // Se tem ID numérico real (não gerado localmente), faz upsert
@@ -222,6 +224,8 @@ const SupabaseDB = {
       featured:     row.featured,
       sort_order:   row.sort_order,
       planRequired: row.plan_required || 'free',
+      watchUrl:     row.watch_url     || '',
+      details:      row.details       || '',
       progress:     0,
     };
   },

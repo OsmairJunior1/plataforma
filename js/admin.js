@@ -509,6 +509,8 @@ function openCourseModal(id) {
   setVal('courseThumbUrl', course?.thumb || '');
   setVal('courseHeroUrl', course?.hero || '');
   setVal('courseTags', course?.tags?.join(', ') || '');
+  setVal('courseWatchUrl', course?.watchUrl || '');
+  setVal('courseDetails', course?.details || '');
   document.getElementById('courseThumbPreview').src = course?.thumb || '';
   document.getElementById('courseHeroPreview').src = course?.hero || '';
 
@@ -533,6 +535,8 @@ async function saveCourse() {
     thumb: getVal('courseThumbUrl'),
     hero: getVal('courseHeroUrl'),
     tags: getVal('courseTags').split(',').map(t => t.trim()).filter(Boolean),
+    watchUrl: getVal('courseWatchUrl').trim(),
+    details: getVal('courseDetails').trim(),
     progress: 0,
   };
 
