@@ -485,7 +485,7 @@ function createPosterCard(course, opts = {}) {
   card.addEventListener('click', (e) => {
     const action = e.target.closest('[data-action]')?.dataset.action;
     if (isLocked) { showToast('🔒 Exclusivo para assinantes Premium.', 'info'); return; }
-    if (action === 'play') window.location.href = `curso.html?id=${course.id}`;
+    if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
     else if (action === 'list') { toggleMyList(course.id, card); e.stopPropagation(); }
     else if (action === 'info') { openModal(course); e.stopPropagation(); }
     else if (!e.target.closest('button')) openModal(course);
@@ -584,8 +584,8 @@ function renderTrailSections() {
     const safeColor = escapeHtml(trail.color || '#e50914');
     const safeName  = escapeHtml(trail.name  || 'Trilha');
 
-    const cards = trailCourses.map(course => {
-      const card = createCourseCard(course);
+    const cards = trailCourses.map((course, i) => {
+      const card = createPosterCard(course, { index: i });
       return card.outerHTML;
     }).join('');
 
@@ -614,11 +614,23 @@ function renderTrailSections() {
     });
   });
 
-  // Rebind card click para trilhas
-  container.querySelectorAll('.course-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = card.dataset.id;
-      if (id) window.location.href = `curso.html?id=${id}`;
+  // Rebind card click para trilhas (poster cards)
+  container.querySelectorAll('.poster-card').forEach(cardEl => {
+    cardEl.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
+        if (!course) return;
+        const action = btn.dataset.action;
+        if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
+        else if (action === 'list') toggleMyList(course.id, cardEl);
+        else if (action === 'info') openModal(course);
+      });
+    });
+    cardEl.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
+      if (course) openModal(course);
     });
   });
 }
@@ -662,7 +674,11 @@ function openModal(course) {
   document.getElementById('modalDuration').textContent = course.duration;
   document.getElementById('modalRating').textContent = `⭐ ${course.rating}`;
   document.getElementById('modalLevel').textContent = course.level;
-  document.getElementById('modalWatch').href = `curso.html?id=${course.id}`;
+  const watchBtn = document.getElementById('modalWatch');
+  if (watchBtn) {
+    watchBtn.removeAttribute('href');
+    watchBtn.onclick = (e) => { e.preventDefault(); closeModal(); openVideoPlayer(course); };
+  }
 
   const tagsEl = document.getElementById('modalTags');
   tagsEl.innerHTML = course.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('');
@@ -682,6 +698,66 @@ if (modalOverlay) {
   });
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* ── YOUTUBE / VIDEO PLAYER ── */
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([^?&#/]+)/,
+    /[?&]v=([^?&#/]+)/,
+    /youtube\.com\/embed\/([^?&#/]+)/,
+    /youtube\.com\/shorts\/([^?&#/]+)/,
+  ];
+  for (const p of patterns) { const m = String(url).match(p); if (m) return m[1]; }
+  return null;
+}
+
+function openVideoPlayer(course) {
+  const overlay = document.getElementById('vgrPlayerOverlay');
+  const wrap    = document.getElementById('vgrPlayerWrap');
+  const titleEl = document.getElementById('vgrPlayerTitle');
+  if (!overlay || !wrap) { window.location.href = course.watchUrl || `curso.html?id=${course.id}`; return; }
+
+  wrap.innerHTML = '';
+  if (titleEl) titleEl.textContent = course.title || '';
+
+  const ytId = extractYouTubeId(course.watchUrl || '');
+  if (ytId) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&showinfo=0&color=white`;
+    iframe.style.cssText = 'width:100%;height:100%;border:none';
+    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+    iframe.setAttribute('allowfullscreen','');
+    wrap.appendChild(iframe);
+  } else if (course.watchUrl) {
+    const video = document.createElement('video');
+    video.src = course.watchUrl; video.controls = true; video.autoplay = true;
+    video.style.cssText = 'width:100%;height:100%;background:#000';
+    wrap.appendChild(video);
+  } else {
+    wrap.innerHTML = '<p style="color:rgba(255,255,255,0.4);text-align:center;padding-top:80px;font-size:0.9rem">Vídeo não disponível.</p>';
+  }
+
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideoPlayer() {
+  const overlay = document.getElementById('vgrPlayerOverlay');
+  const wrap    = document.getElementById('vgrPlayerWrap');
+  if (wrap) wrap.innerHTML = '';
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Bind close button + ESC + click outside
+(function bindVideoPlayer() {
+  const overlay = document.getElementById('vgrPlayerOverlay');
+  const closeBtn = document.getElementById('vgrPlayerClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeVideoPlayer);
+  if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) closeVideoPlayer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('vgrPlayerOverlay')?.style.display === 'flex') closeVideoPlayer(); });
+})();
 
 /* ---- TOAST ---- */
 function showToast(msg, icon = 'fa-circle-check') {

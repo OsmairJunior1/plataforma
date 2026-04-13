@@ -278,5 +278,59 @@
   <script src="js/supabase-db.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- ══ HERO: carrega direto do Supabase, sem depender do state machine ══ -->
+  <script>
+  (async function heroDirectLoad() {
+    try {
+      if (!window.supabaseClient) return;
+      const { data, error } = await window.supabaseClient
+        .from('platform_settings')
+        .select('hero_title_1,hero_title_2,hero_badge,hero_url,hero_type,hero_description,hero_poster,hero_title_highlight')
+        .single();
+      if (error || !data) return;
+      const esc = s => String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const t = document.getElementById('heroTitleEl');
+      if (t && (data.hero_title_1 || data.hero_title_2)) {
+        const hl = data.hero_title_highlight !== false;
+        t.innerHTML = esc(data.hero_title_1||'')
+          + '<br/><span style="color:'+(hl?'var(--red)':'inherit')+'">'
+          + esc(data.hero_title_2||'')+'</span>';
+      }
+      const b = document.getElementById('heroBadgeText');
+      if (b && data.hero_badge) b.textContent = data.hero_badge;
+      const d = document.getElementById('heroDescEl');
+      if (d) d.textContent = data.hero_description || '';
+      const bg = document.getElementById('heroBg');
+      if (bg && data.hero_url) {
+        bg.querySelectorAll('video, img.hero-img').forEach(e => e.remove());
+        const ov = bg.querySelector('.hero-overlay');
+        if (data.hero_type === 'image') {
+          const img = document.createElement('img');
+          img.className = 'hero-img'; img.src = data.hero_url; img.alt = 'Hero';
+          bg.insertBefore(img, ov);
+        } else {
+          const vid = document.createElement('video');
+          vid.className = 'hero-video'; vid.autoplay = true; vid.muted = true; vid.loop = true;
+          vid.setAttribute('playsinline','');
+          if (data.hero_poster) vid.poster = data.hero_poster;
+          const src = document.createElement('source');
+          src.src = data.hero_url; src.type = 'video/mp4';
+          vid.appendChild(src); bg.insertBefore(vid, ov);
+        }
+      }
+    } catch(e) {}
+  })();
+  </script>
+
+  <!-- ══ PLAYER DE VÍDEO (YouTube / MP4) ══ -->
+  <div id="vgrPlayerOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.97);flex-direction:column;align-items:center;justify-content:center">
+    <button id="vgrPlayerClose" style="position:absolute;top:20px;right:24px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.18);color:#fff;width:46px;height:46px;border-radius:50%;font-size:1.15rem;cursor:pointer;z-index:10;transition:background 0.2s" onmouseenter="this.style.background='rgba(229,9,20,0.8)'" onmouseleave="this.style.background='rgba(255,255,255,0.12)'">
+      <i class="fas fa-times"></i>
+    </button>
+    <div id="vgrPlayerTitle" style="color:rgba(255,255,255,0.85);font-size:1rem;font-weight:700;margin-bottom:14px;text-align:center;padding:0 80px;max-width:900px;letter-spacing:0.3px"></div>
+    <div id="vgrPlayerWrap" style="width:min(92vw,1100px);aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,0.8)"></div>
+  </div>
 </body>
 </html>

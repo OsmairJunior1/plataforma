@@ -590,9 +590,9 @@
       </div>
 
       <div class="form-group" style="margin-bottom:14px">
-        <label><i class="fas fa-play-circle"></i> Link para Assistir <span class="badge-required">link do curso</span></label>
-        <input type="text" class="form-input" id="courseWatchUrl" placeholder="Ex: https://youtube.com/watch?v=... ou curso.html?id=1" />
-        <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:4px;display:block">URL completa onde o aluno assiste ao curso</small>
+        <label><i class="fab fa-youtube" style="color:#ff0000"></i> Link do YouTube <span class="badge-required">obrigatório para play</span></label>
+        <input type="text" class="form-input" id="courseWatchUrl" placeholder="https://www.youtube.com/watch?v=XXXXXXXXX" />
+        <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:4px;display:block">Cole o link do YouTube. O vídeo tocará em player integrado — o usuário não precisa sair da plataforma.</small>
       </div>
 
       <div class="form-group" style="margin-bottom:14px">
@@ -627,11 +627,11 @@
       <!-- Thumbnails -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
         <div>
-          <p style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px"><i class="fas fa-image" style="color:var(--red);margin-right:5px"></i>Capa do Card</p>
-          <input type="text" class="form-input" id="courseThumbUrl" placeholder="URL da imagem de capa" style="margin-bottom:8px" />
+          <p style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px"><i class="fas fa-image" style="color:var(--red);margin-right:5px"></i>Capa do Curso <span style="font-size:0.68rem;color:rgba(255,255,255,0.4)">(formato cartaz 2:3 — ex: 400×600px)</span></p>
+          <input type="text" class="form-input" id="courseThumbUrl" placeholder="URL da imagem de capa (formato cartaz/poster)" style="margin-bottom:8px" />
           <input type="file" id="courseThumbFile" accept="image/*" style="display:none" />
           <div style="position:relative;cursor:pointer" onclick="document.getElementById('courseThumbFile').click()">
-            <img id="courseThumbPreview" src="" alt="Preview" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:7px;background:var(--bg4);border:1px solid var(--border)" onerror="this.src=''" />
+            <img id="courseThumbPreview" src="" alt="Preview" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:7px;background:var(--bg4);border:1px solid var(--border)" onerror="this.src=''" />
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border-radius:7px;opacity:0;transition:opacity 0.2s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
               <span style="font-size:0.8rem;font-weight:600"><i class="fas fa-upload" style="margin-right:5px"></i>Trocar imagem</span>
             </div>
