@@ -115,7 +115,10 @@ async function loadStateFromSupabase() {
   adminState.hero     = { ...adminState.hero,     ...remote.hero     };
   adminState.landing  = { ...adminState.landing,  ...remote.landing  };
   if (remote.featured?.length) adminState.featured = remote.featured;
-  if (remote.homeSections) adminState.homeSections = { ...adminState.homeSections, ...remote.homeSections };
+  // Só aplica homeSections do Supabase se tiver pelo menos uma seção válida
+  if (remote.homeSections && Object.keys(remote.homeSections).length > 0) {
+    adminState.homeSections = { ...adminState.homeSections, ...remote.homeSections };
+  }
 
   // Sincroniza landing do Supabase → vgracademy_db para que landing.html leia sem precisar de Supabase
   if (remote.landing?.videoUrl) {
@@ -585,18 +588,32 @@ function openCourseModal(id) {
   document.getElementById('courseThumbPreview').src = course?.thumb || '';
   document.getElementById('courseHeroPreview').src = course?.hero || '';
 
-  // Popular select de seção com as seções atuais do admin
+  // Popular select de seção — usa defaults se adminState.homeSections estiver vazio
   const secSelect = document.getElementById('courseSectionKey');
   if (secSelect) {
-    // Descobre em qual seção este curso está
+    const SECTION_DEFAULTS = {
+      featured:   { title: 'Em Destaque',            order: 0 },
+      continue:   { title: 'Continuar Assistindo',   order: 1 },
+      popular:    { title: 'Mais Populares',          order: 2 },
+      new:        { title: 'Lançamentos',             order: 3 },
+      top10:      { title: 'Top 10 da Semana',        order: 4 },
+      mylist:     { title: 'Minha Lista',             order: 5 },
+      categories: { title: 'Explorar por Categoria', order: 6 },
+    };
+    const hs = (adminState.homeSections && Object.keys(adminState.homeSections).length > 0)
+      ? adminState.homeSections
+      : SECTION_DEFAULTS;
+
+    // Descobre em qual seção este curso já está (comparação por String)
     let currentSectionKey = '';
-    if (id) {
-      for (const [k, s] of Object.entries(adminState.homeSections || {})) {
-        if ((s.courseIds || []).map(Number).includes(Number(id))) { currentSectionKey = k; break; }
+    const sid2 = id ? String(id) : null;
+    if (sid2) {
+      for (const [k, s] of Object.entries(hs)) {
+        if ((s.courseIds || []).map(String).includes(sid2)) { currentSectionKey = k; break; }
       }
     }
-    const hs = adminState.homeSections || {};
-    secSelect.innerHTML = `<option value="">Automático (lógica padrão)</option>`
+
+    secSelect.innerHTML = `<option value="">Automático (aparece em todas as seções)</option>`
       + Object.entries(hs)
           .sort((a, b) => (a[1].order || 0) - (b[1].order || 0))
           .map(([k, s]) => `<option value="${escapeHtml(k)}" ${k === currentSectionKey ? 'selected' : ''}>${escapeHtml(s.title || k)}</option>`)
