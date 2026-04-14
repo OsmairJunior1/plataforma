@@ -495,27 +495,31 @@ function initCoursesPanel() {
 function renderCoursesTable(courses = adminState.courses) {
   const tbody = document.getElementById('coursesTableBody');
   if (!tbody) return;
-  if (!courses.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--gray2);padding:20px;text-align:center">Nenhum curso encontrado.</td></tr>'; return; }
+
+  if (!courses.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--gray2);padding:20px;text-align:center">Nenhum curso encontrado.</td></tr>';
+    return;
+  }
+
+  // Usa data-id no TR — sem onclick inline, sem risco de quebrar HTML com IDs especiais
   tbody.innerHTML = courses.map(c => {
-    // Usa o id como string segura para onclick — evita NaN com IDs do Supabase
-    const safeId = JSON.stringify(String(c.id));
     const isFeatured = adminState.featured.map(String).includes(String(c.id));
+    const secEntry = Object.entries(adminState.homeSections || {})
+      .find(([, s]) => (s.courseIds || []).map(String).includes(String(c.id)));
+    const secBadge = secEntry
+      ? `<br><span style="font-size:0.68rem;color:var(--red);font-weight:600"><i class="fas fa-layer-group"></i> ${escapeHtml(secEntry[1].title || secEntry[0])}</span>`
+      : '';
     return `
-    <tr>
-      <td><img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" class="table-thumb" onerror="this.src='https://via.placeholder.com/70x40/1e1e1e/666?text=Sem+Imagem'" /></td>
+    <tr data-course-id="${escapeHtml(String(c.id))}">
+      <td><img src="${escapeHtml(c.thumb || '')}" alt="${escapeHtml(c.title)}" class="table-thumb"
+           onerror="this.src='https://via.placeholder.com/70x40/1e1e1e/666?text=Sem+Imagem'" /></td>
       <td>
         <div class="table-title">${escapeHtml(c.title)}</div>
         <small style="color:var(--gray2);font-size:0.7rem">${escapeHtml(c.instructor || 'Sem instrutor')}</small>
       </td>
       <td>
-        <span style="font-size:0.78rem;color:var(--gray)">${escapeHtml(c.category)}</span>
-        ${(() => {
-          const secEntry = Object.entries(adminState.homeSections || {})
-            .find(([, s]) => (s.courseIds || []).map(Number).includes(Number(c.id)));
-          return secEntry
-            ? `<br><span style="font-size:0.68rem;color:var(--red);font-weight:600"><i class="fas fa-layer-group"></i> ${escapeHtml(secEntry[1].title || secEntry[0])}</span>`
-            : '';
-        })()}
+        <span style="font-size:0.78rem;color:var(--gray)">${escapeHtml(c.category || '')}</span>
+        ${secBadge}
       </td>
       <td>
         <span class="status-badge ${isFeatured ? 'status-featured' : 'status-active'}">
@@ -523,20 +527,31 @@ function renderCoursesTable(courses = adminState.courses) {
         </span>
       </td>
       <td style="font-size:0.8rem;color:var(--gray)">${escapeHtml(String(c.lessons || 0))} aulas</td>
-      <td><span style="color:#ffd700;font-size:0.8rem">★ ${escapeHtml(String(c.rating))}</span></td>
+      <td><span style="color:#ffd700;font-size:0.8rem">★ ${escapeHtml(String(c.rating || 0))}</span></td>
       <td>
         <div class="table-actions">
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="openCourseModal(${safeId})" title="Editar"><i class="fas fa-pen"></i></button>
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="toggleFeatured(${safeId})" title="${isFeatured ? 'Remover destaque' : 'Destacar'}">
+          <button class="btn btn-outline btn-icon-only btn-sm" data-action="edit"    title="Editar"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-outline btn-icon-only btn-sm" data-action="feature" title="${isFeatured ? 'Remover destaque' : 'Destacar'}">
             <i class="fas fa-star" style="color:${isFeatured ? '#ffd700' : 'inherit'}"></i>
           </button>
-          <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteCourse(${safeId})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
-
+          <button class="btn btn-outline btn-icon-only btn-sm" data-action="delete"  title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
         </div>
       </td>
-    </tr>
-  `;
+    </tr>`;
   }).join('');
+
+  // Event delegation — um único listener na tbody, sem onclick inline
+  tbody.onclick = (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const tr  = btn.closest('tr[data-course-id]');
+    if (!tr) return;
+    const id  = tr.dataset.courseId;
+    const action = btn.dataset.action;
+    if (action === 'edit')    openCourseModal(id);
+    if (action === 'feature') toggleFeatured(id);
+    if (action === 'delete')  deleteCourse(id);
+  };
 }
 
 let editingCourseId = null;
@@ -610,19 +625,19 @@ async function saveCourse() {
     progress: 0,
   };
 
-  // Gerencia atribuição de seção: remove do seção anterior, adiciona na nova
+  // Gerencia atribuição de seção: remove da seção anterior, adiciona na nova
   const newSectionKey = getVal('courseSectionKey');
   const courseId = editingCourseId || null;
   // Remove este curso de todas as seções onde estava
   Object.values(adminState.homeSections || {}).forEach(s => {
-    if (s.courseIds) s.courseIds = s.courseIds.map(Number).filter(i => i !== Number(courseId));
+    if (s.courseIds) s.courseIds = s.courseIds.filter(i => String(i) !== String(courseId));
   });
-  // Adiciona na nova seção (se escolhida)
+  // Adiciona na nova seção (se escolhida) — usa placeholder "__new__" para cursos ainda sem ID real
   if (newSectionKey && adminState.homeSections[newSectionKey]) {
     if (!adminState.homeSections[newSectionKey].courseIds) adminState.homeSections[newSectionKey].courseIds = [];
-    const numId = editingCourseId || (Date.now()); // id temporário para novos cursos (será substituído após save)
-    if (!adminState.homeSections[newSectionKey].courseIds.map(Number).includes(Number(numId))) {
-      adminState.homeSections[newSectionKey].courseIds.push(numId);
+    const tempId = editingCourseId || '__new__';
+    if (!adminState.homeSections[newSectionKey].courseIds.map(String).includes(String(tempId))) {
+      adminState.homeSections[newSectionKey].courseIds.push(tempId);
     }
   }
 
@@ -653,15 +668,13 @@ async function saveCourse() {
   closeModal('courseModal');
   renderCoursesTable();
   initDashboard();
-  // Se atribuiu uma nova seção, atualiza o courseId correto (em caso de curso novo)
+  // Se atribuiu uma nova seção, substitui placeholder '__new__' pelo ID real do curso criado
   if (newSectionKey && adminState.homeSections[newSectionKey] && !editingCourseId) {
     const newCourse = adminState.courses[adminState.courses.length - 1];
     if (newCourse) {
-      const ids = adminState.homeSections[newSectionKey].courseIds || [];
-      // Remove o id temporário (Date.now-like) e coloca o real
-      adminState.homeSections[newSectionKey].courseIds = ids
-        .filter(i => Math.abs(Number(i) - Date.now()) > 1000) // remove ids muito grandes (temporários)
-        .concat(newCourse.id);
+      adminState.homeSections[newSectionKey].courseIds = (adminState.homeSections[newSectionKey].courseIds || [])
+        .filter(i => String(i) !== '__new__')
+        .concat(String(newCourse.id));
     }
   }
 }
