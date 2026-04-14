@@ -59,13 +59,13 @@ const SupabaseDB = {
           if (label !== 'completo') {
             console.warn(`[SupabaseDB] Salvo (${label}). Execute o SQL de migração para ativar todas as colunas.`);
           }
-          return true;
+          return { ok: true, label };
         }
       } catch (_) { /* tenta próxima variante */ }
     }
 
     console.error('[SupabaseDB] saveSettings: todas as tentativas falharam.');
-    return false;
+    return { ok: false, label: null };
   },
 
   // --------------------------------------------------

@@ -528,6 +528,32 @@
           <p style="color:var(--gray2);font-size:0.82rem;margin-bottom:16px">
             Ative/desative, reordene (arraste) e crie novas seções para a página inicial.
           </p>
+
+          <!-- Banner de migração — exibido automaticamente se as colunas não existirem no Supabase -->
+          <div id="migrationWarning" style="display:none;background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.5);border-radius:10px;padding:16px 18px;margin-bottom:18px">
+            <p style="color:#f5a623;font-weight:700;font-size:0.9rem;margin-bottom:8px">
+              <i class="fas fa-exclamation-triangle"></i> Migração necessária no Supabase
+            </p>
+            <p style="color:rgba(255,255,255,0.7);font-size:0.8rem;margin-bottom:12px">
+              As colunas <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px">trails</code> e
+              <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px">home_sections</code> ainda não existem
+              no banco. Sem elas, Seções e Trilhas <strong>não persistem</strong> para outros dispositivos.
+              Execute o SQL abaixo em <strong>Supabase → SQL Editor</strong>:
+            </p>
+            <div style="position:relative">
+              <pre id="migrationSQL" style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;font-size:0.75rem;color:#a8e6a3;white-space:pre-wrap;margin:0;line-height:1.5">ALTER TABLE platform_settings
+  ADD COLUMN IF NOT EXISTS trails        JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS home_sections JSONB DEFAULT NULL;</pre>
+              <button onclick="navigator.clipboard.writeText(document.getElementById('migrationSQL').textContent).then(()=>showToast('SQL copiado!','success'))"
+                style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.72rem">
+                <i class="fas fa-copy"></i> Copiar
+              </button>
+            </div>
+            <p style="color:rgba(255,255,255,0.45);font-size:0.75rem;margin-top:10px">
+              Após executar o SQL, volte aqui e clique em <strong>Salvar Seções</strong>. Este aviso desaparecerá automaticamente.
+            </p>
+          </div>
+
           <div id="sectionsList" style="display:flex;flex-direction:column;gap:8px">
             <!-- Preenchido via JS -->
           </div>
