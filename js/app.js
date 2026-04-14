@@ -507,6 +507,10 @@ function populatePosterCarousel(id, courses, opts = {}) {
   if (!el) return;
   el.innerHTML = '';
   courses.forEach((course, index) => el.appendChild(createPosterCard(course, { ...opts, index })));
+
+  // Oculta a seção pai se o carrossel estiver vazio
+  const section = el.closest('section[data-section-key]');
+  if (section) section.style.display = courses.length ? '' : 'none';
 }
 
 /* ---- RENDER FEATURED GRID ---- */
@@ -527,19 +531,25 @@ function renderFeaturedGrid() {
     toShow = COURSES.filter(c => c.featured);
   }
 
-  // Fallback: primeiros 6 cursos
-  if (!toShow.length) {
-    toShow = COURSES.slice(0, 6);
-  }
-
+  // Sem cursos em destaque definidos → oculta a seção
   grid.innerHTML = '';
+  const section = grid.closest('section[data-section-key]');
+  if (!toShow.length) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = '';
   toShow.forEach((course, index) => grid.appendChild(createPosterCard(course, { index })));
 }
 
 /* ---- RENDER ALL POSTER CAROUSELS ---- */
 function renderCarousels() {
   const courses = COURSES;
-  if (!courses.length) return;
+  if (!courses.length) {
+    // Sem cursos: oculta todas as seções built-in
+    document.querySelectorAll('#sectionsWrapper [data-section-key]').forEach(s => s.style.display = 'none');
+    return;
+  }
   const user = window.CURRENT_USER;
   const userProgress = user?.progress || {};
 
@@ -548,27 +558,22 @@ function renderCarousels() {
     const p = userProgress[c.id];
     return p && p.percent > 0 && p.percent < 100;
   });
-  const continueSection = document.querySelector('.section.poster-carousel-row:has(#continueRow)');
-  if (inProgress.length) {
-    if (continueSection) continueSection.style.display = '';
-    populatePosterCarousel('continueRow', inProgress);
-  } else {
-    if (continueSection) continueSection.style.display = 'none';
-  }
+  // populatePosterCarousel já oculta a seção quando lista é vazia
+  populatePosterCarousel('continueRow', inProgress);
 
   const popular = [...courses].sort((a, b) => b.rating - a.rating).slice(0, 10);
   populatePosterCarousel('popularRow', popular);
 
+  // Lançamentos: só cursos marcados com badge new/hot — sem fallback para cursos genéricos
   const newCourses = courses.filter(c => c.badge === 'new' || c.badge === 'hot');
-  populatePosterCarousel('newRow', newCourses.length ? newCourses : courses.slice(0, 8));
+  populatePosterCarousel('newRow', newCourses);
 
-  const top10 = [...courses].slice(0, 10);
-  populatePosterCarousel('top10Row', top10, { showRank: true });
+  // Top 10: só exibe se houver cursos cadastrados
+  populatePosterCarousel('top10Row', courses.slice(0, 10), { showRank: true });
 
+  // Minha Lista
   const mylistCourses = courses.filter(c => MY_LIST.includes(c.id));
   populatePosterCarousel('mylistRow', mylistCourses);
-  const mylistSection = document.getElementById('mylistSection');
-  if (mylistSection) mylistSection.style.display = mylistCourses.length ? '' : 'none';
 
   renderFeaturedGrid();
   renderTrailSections();
@@ -674,7 +679,12 @@ function renderCategoriesGrid() {
 
   // Só mostra categorias que têm cursos
   const cats = Object.keys(counts).filter(k => counts[k] > 0);
-  if (!cats.length) return;
+  const catSection = grid.closest('section[data-section-key]');
+  if (!cats.length) {
+    if (catSection) catSection.style.display = 'none';
+    return;
+  }
+  if (catSection) catSection.style.display = '';
 
   grid.innerHTML = cats.map(cat => {
     const meta = CATEGORY_META[cat] || { label: cat, icon: 'fa-folder', clr: '#888' };
