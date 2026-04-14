@@ -116,9 +116,10 @@ const SupabaseDB = {
         details:       course.details       || '',
         updated_at:  new Date().toISOString(),
       };
-      // Se tem ID numérico real (não gerado localmente), faz upsert
-      if (course.id && typeof course.id === 'number' && course.id < 2000000000) {
-        row.id = course.id;
+      // Se tem ID real (number ou string numérica), inclui no upsert para UPDATE
+      const numId = Number(course.id);
+      if (course.id && !isNaN(numId) && numId > 0 && numId < 2000000000) {
+        row.id = numId;
       }
       const { data, error } = await supabaseClient
         .from('courses')
