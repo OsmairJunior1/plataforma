@@ -79,34 +79,30 @@ function applyAdminState(overrideState) {
     }
   }
   if (hero && document.getElementById('heroBg')) {
-    // Mídia de fundo
-    const heroBg = document.getElementById('heroBg');
-    const overlay = heroBg.querySelector('.hero-overlay');
-    // Remove mídia antiga se existir
-    heroBg.querySelectorAll('video, img.hero-video, img.hero-img').forEach(el => el.remove());
+    // Reutiliza elementos nativos do HTML (necessário para autoplay no Android)
+    const vid = document.getElementById('heroBgVideo');
+    const img = document.getElementById('heroBgImg');
     if (hero.type === 'video') {
-      const vid = document.createElement('video');
-      vid.className = 'hero-video';
-      vid.muted = true;
-      vid.setAttribute('muted', '');
-      vid.setAttribute('autoplay', '');
-      vid.setAttribute('loop', '');
-      vid.setAttribute('playsinline', '');
-      vid.setAttribute('webkit-playsinline', '');
-      vid.setAttribute('preload', 'auto');
-      if (hero.poster) vid.poster = hero.poster;
-      vid.src = hero.url || '';
-      heroBg.insertBefore(vid, overlay);
-      const _tryPlay = () => vid.play().catch(() => {});
-      vid.addEventListener('canplay', _tryPlay, { once: true });
-      vid.load();
-      _tryPlay();
+      if (img) img.style.display = 'none';
+      if (vid) {
+        vid.className = 'hero-video';
+        vid.style.display = 'block';
+        if (hero.poster) vid.poster = hero.poster;
+        vid.src = hero.url || '';
+        vid.muted = true;
+        const _tryPlay = () => vid.play().catch(() => {});
+        vid.addEventListener('canplay', _tryPlay, { once: true });
+        vid.load();
+        _tryPlay();
+      }
     } else {
-      const img = document.createElement('img');
-      img.className = 'hero-img';
-      img.src = hero.url || hero.poster || '';
-      img.alt = 'Hero';
-      heroBg.insertBefore(img, overlay);
+      if (vid) vid.style.display = 'none';
+      if (img) {
+        img.className = 'hero-img';
+        img.src = hero.url || hero.poster || '';
+        img.alt = 'Hero';
+        img.style.display = 'block';
+      }
     }
 
     // Textos
@@ -705,8 +701,134 @@ function renderCategoriesGrid() {
   });
 }
 
+/* ---- APPLY HOME SECTIONS (order, visibility, custom) ---- */
+function applyHomeSections() {
+  const state = getAdminState();
+  const sections = state.homeSections;
+  if (!sections || !Object.keys(sections).length) return;
+
+  const wrapper = document.getElementById('sectionsWrapper');
+  if (!wrapper) return;
+
+  // 1. Aplicar visibilidade nas seções built-in
+  Object.entries(sections).forEach(([key, sec]) => {
+    const el = wrapper.querySelector(`[data-section-key="${key}"]`);
+    if (!el) return;
+    el.style.display = sec.visible ? '' : 'none';
+    // Atualiza título se foi customizado (para built-ins com title diferente)
+    if (sec.title) {
+      const h2 = el.querySelector('.section-header h2');
+      if (h2) {
+        const icon = h2.querySelector('i');
+        const iconClass = icon ? icon.className : '';
+        h2.innerHTML = `<i class="${escapeHtml(iconClass)}"></i> ${escapeHtml(sec.title)}`;
+      }
+    }
+  });
+
+  // 2. Reordenar: pega todos os filhos diretos e ordena conforme .order
+  const sorted = Object.entries(sections).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+
+  sorted.forEach(([key]) => {
+    const el = wrapper.querySelector(`[data-section-key="${key}"]`);
+    if (el) wrapper.appendChild(el); // move para o final na ordem correta
+  });
+
+  // trailsContainer não tem data-section-key mas fica no final por padrão — mantém posição
+  const trails = document.getElementById('trailsContainer');
+  if (trails) wrapper.appendChild(trails);
+
+  // custom sections container por último
+  const customContainer = document.getElementById('customSectionsContainer');
+  if (customContainer) wrapper.appendChild(customContainer);
+
+  // 3. Renderizar seções customizadas (novas seções criadas no admin)
+  renderCustomSections(sections);
+}
+
+function renderCustomSections(sections) {
+  const container = document.getElementById('customSectionsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const customEntries = Object.entries(sections)
+    .filter(([, sec]) => sec.custom)
+    .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+
+  if (!customEntries.length) return;
+
+  customEntries.forEach(([key, sec]) => {
+    if (!sec.visible) return;
+
+    const rowId = `customRow_${key}`;
+    const iconClass = escapeHtml(sec.icon || 'fa-layer-group');
+    const title = escapeHtml(sec.title || 'Seção');
+
+    let courses = [];
+    if (sec.content === 'all_courses') {
+      courses = COURSES.slice(0, 12);
+    } else if (sec.content === 'popular') {
+      courses = [...COURSES].sort((a, b) => b.rating - a.rating).slice(0, 10);
+    } else if (sec.content === 'new') {
+      courses = COURSES.filter(c => c.badge === 'new' || c.badge === 'hot').slice(0, 10);
+      if (!courses.length) courses = COURSES.slice(0, 8);
+    }
+    // 'custom' content = carrossel vazio
+
+    const cards = courses.map((c, i) => createPosterCard(c, { index: i }).outerHTML).join('');
+
+    const section = document.createElement('section');
+    section.className = 'section poster-carousel-row';
+    section.dataset.sectionKey = key;
+    section.innerHTML = `
+      <div class="section-header">
+        <h2><i class="fas ${iconClass}"></i> ${title}</h2>
+      </div>
+      <div class="carousel-wrap">
+        <button class="carousel-btn prev" data-target="${rowId}"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="${rowId}">${cards}</div>
+        <button class="carousel-btn next" data-target="${rowId}"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    `;
+
+    // Rebind carousel buttons
+    section.querySelectorAll('.carousel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const carousel = document.getElementById(btn.dataset.target);
+        if (!carousel) return;
+        carousel.scrollBy({ left: btn.classList.contains('prev') ? -carousel.clientWidth * 0.75 : carousel.clientWidth * 0.75, behavior: 'smooth' });
+      });
+    });
+
+    // Rebind card interactions
+    section.querySelectorAll('.poster-card').forEach(cardEl => {
+      cardEl.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
+          if (!course) return;
+          const action = btn.dataset.action;
+          if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
+          else if (action === 'list') toggleMyList(course.id, cardEl);
+          else if (action === 'info') openModal(course);
+        });
+      });
+      cardEl.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
+        if (course) openModal(course);
+      });
+    });
+
+    container.appendChild(section);
+  });
+}
+
 // Init poster carousels on home page
-if (document.getElementById('continueRow')) renderCarousels();
+if (document.getElementById('continueRow')) {
+  renderCarousels();
+  applyHomeSections();
+}
 
 /* ---- CATEGORY CARDS ---- */
 document.querySelectorAll('.category-card').forEach(card => {

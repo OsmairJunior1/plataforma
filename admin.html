@@ -526,7 +526,7 @@
         </div>
         <div class="form-section-body">
           <p style="color:var(--gray2);font-size:0.82rem;margin-bottom:16px">
-            Ative/desative e reordene as seções da página inicial arrastando os itens.
+            Ative/desative, reordene (arraste) e crie novas seções para a página inicial.
           </p>
           <div id="sectionsList" style="display:flex;flex-direction:column;gap:8px">
             <!-- Preenchido via JS -->
@@ -534,7 +534,10 @@
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-outline" id="btnNewSection" style="border:1px dashed var(--border);color:var(--gray1);background:transparent;gap:8px">
+          <i class="fas fa-plus-circle"></i> Nova Seção
+        </button>
         <button class="btn btn-red" id="btnSaveSections"><i class="fas fa-save"></i> Salvar Seções</button>
       </div>
 
@@ -843,5 +846,59 @@ async function adminLogout() {
 </script>
 
 <script src="js/admin.js"></script>
+
+<!-- ============================================================
+     MODAL: NOVA SEÇÃO
+     ============================================================ -->
+<div class="a-modal-overlay" id="newSectionModal" onclick="if(event.target===this)closeNewSectionModal()">
+  <div class="a-modal" style="max-width:460px">
+    <div class="a-modal-header">
+      <h3><i class="fas fa-plus-circle"></i> Nova Seção</h3>
+      <button class="a-modal-close" onclick="closeNewSectionModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="a-modal-body">
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Nome da Seção *</label>
+        <input type="text" id="newSecTitle" class="form-input" placeholder="Ex: Mais Assistidos" maxlength="60" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Ícone <span style="color:var(--gray2);font-weight:400">(sem "fas " — ex: fa-star)</span></label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="text" id="newSecIcon" class="form-input" placeholder="fa-layer-group" style="flex:1"
+            oninput="document.getElementById('newSecIconPreview').className='fas '+this.value" />
+          <i id="newSecIconPreview" class="fas fa-layer-group"
+            style="font-size:1.3rem;color:var(--red);width:28px;text-align:center;flex-shrink:0"></i>
+        </div>
+        <div id="newSecIconGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+          <!-- botões de atalho de ícone — gerados por JS em openNewSectionModal() -->
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px">
+        <label class="form-label">Conteúdo exibido</label>
+        <select id="newSecContent" class="form-input">
+          <option value="all_courses">Todos os cursos</option>
+          <option value="popular">Mais populares</option>
+          <option value="new">Lançamentos</option>
+          <option value="custom">Personalizado (carrossel vazio)</option>
+        </select>
+      </div>
+
+    </div>
+    <div class="a-modal-footer" style="padding:16px 24px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border)">
+      <button class="btn btn-outline" onclick="closeNewSectionModal()">Cancelar</button>
+      <button class="btn btn-red" onclick="confirmNewSection()"><i class="fas fa-check"></i> Criar Seção</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Modal Nova Seção — controlado via JS (classList.add/remove 'open') */
+#newSectionModal          { display: none; }
+#newSectionModal.open     { display: flex; }
+</style>
+
 </body>
 </html>

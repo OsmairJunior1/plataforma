@@ -1583,6 +1583,10 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   z-index: 10;
 }
 
+/* sectionsWrapper herda o padding do main-content mas não precisa de padding-top
+   pois a featured-section usa margin-top negativo para sobrepor o hero */
+#sectionsWrapper { padding-top: 0 !important; }
+
 .featured-section .section-header {
   margin-bottom: 20px;
   padding-bottom: 0;

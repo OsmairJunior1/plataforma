@@ -170,8 +170,9 @@ const SupabaseDB = {
         videoUrl:    row.landing_video_url    || '',
         videoPoster: row.landing_video_poster || '',
       },
-      featured: Array.isArray(row.featured_ids) ? row.featured_ids : [],
-      trails:   Array.isArray(row.trails) ? row.trails : [],
+      featured:     Array.isArray(row.featured_ids)  ? row.featured_ids  : [],
+      trails:       Array.isArray(row.trails)         ? row.trails         : [],
+      homeSections: row.home_sections && typeof row.home_sections === 'object' ? row.home_sections : null,
     };
   },
 
@@ -198,8 +199,9 @@ const SupabaseDB = {
       landing_video_type:      l.videoType     || 'video',
       landing_video_url:       l.videoUrl      || '',
       landing_video_poster:    l.videoPoster   || '',
-      featured_ids:            state.featured  || [],
-      trails:                  state.trails    || [],
+      featured_ids:            state.featured      || [],
+      trails:                  state.trails        || [],
+      home_sections:           state.homeSections  || null,
     };
   },
 

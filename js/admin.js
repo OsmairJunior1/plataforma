@@ -88,6 +88,7 @@ async function loadStateFromSupabase() {
   adminState.hero     = { ...adminState.hero,     ...remote.hero     };
   adminState.landing  = { ...adminState.landing,  ...remote.landing  };
   if (remote.featured?.length) adminState.featured = remote.featured;
+  if (remote.homeSections) adminState.homeSections = { ...adminState.homeSections, ...remote.homeSections };
 
   // Sincroniza landing do Supabase → vgracademy_db para que landing.html leia sem precisar de Supabase
   if (remote.landing?.videoUrl) {
@@ -931,6 +932,45 @@ function updateFeaturedOrder() {
 // =====================================================
 //  HOME SECTIONS PANEL
 // =====================================================
+
+// Seções built-in — não podem ser deletadas
+const BUILTIN_SECTION_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
+
+function buildSectionRow(key, sec) {
+  const isCustom = !BUILTIN_SECTION_KEYS.has(key);
+  const row = document.createElement('div');
+  row.className = 'sortable-item';
+  row.dataset.key = key;
+  row.draggable = true;
+  row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:grab;transition:background 0.2s';
+  row.innerHTML = `
+    <i class="fas fa-grip-vertical" style="color:var(--gray2);font-size:0.75rem;flex-shrink:0"></i>
+    <i class="fas ${escapeHtml(sec.icon || 'fa-layer-group')}" style="color:var(--red);width:16px;text-align:center;flex-shrink:0"></i>
+    <span style="flex:1;font-size:0.88rem;font-weight:600">${escapeHtml(sec.title)}</span>
+    ${isCustom ? `<button class="btn-icon-sm section-delete-btn" data-key="${escapeHtml(key)}" title="Excluir" style="background:none;border:none;color:var(--gray2);cursor:pointer;padding:4px 6px;border-radius:4px;transition:color 0.15s" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--gray2)'"><i class="fas fa-trash-alt" style="font-size:0.78rem"></i></button>` : ''}
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0">
+      <input type="checkbox" class="section-toggle" data-key="${escapeHtml(key)}" ${sec.visible ? 'checked' : ''} />
+      <span class="toggle-label-text" style="font-size:0.75rem;color:var(--gray2);min-width:42px">${sec.visible ? 'Visível' : 'Oculta'}</span>
+    </label>
+  `;
+
+  row.querySelector('.section-toggle').addEventListener('change', (e) => {
+    if (!adminState.homeSections[key]) return;
+    adminState.homeSections[key].visible = e.target.checked;
+    e.target.nextElementSibling.textContent = e.target.checked ? 'Visível' : 'Oculta';
+  });
+
+  if (isCustom) {
+    row.querySelector('.section-delete-btn')?.addEventListener('click', () => {
+      if (!confirm(`Excluir a seção "${sec.title}"?`)) return;
+      delete adminState.homeSections[key];
+      row.remove();
+    });
+  }
+
+  return row;
+}
+
 function initSectionsPanel() {
   const list = document.getElementById('sectionsList');
   if (!list) return;
@@ -939,32 +979,9 @@ function initSectionsPanel() {
   const sorted = Object.entries(sections).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
   list.innerHTML = '';
-  sorted.forEach(([key, sec]) => {
-    const row = document.createElement('div');
-    row.className = 'sortable-item';
-    row.dataset.key = key;
-    row.draggable = true;
-    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:grab;transition:background 0.2s';
-    row.innerHTML = `
-      <i class="fas fa-grip-vertical" style="color:var(--gray2);font-size:0.75rem;flex-shrink:0"></i>
-      <i class="fas ${escapeHtml(sec.icon)}" style="color:var(--red);width:16px;text-align:center;flex-shrink:0"></i>
-      <span style="flex:1;font-size:0.88rem;font-weight:600">${escapeHtml(sec.title)}</span>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0">
-        <input type="checkbox" class="section-toggle" data-key="${escapeHtml(key)}" ${sec.visible ? 'checked' : ''} />
-        <span class="toggle-label-text" style="font-size:0.75rem;color:var(--gray2);min-width:42px">${sec.visible ? 'Visível' : 'Oculta'}</span>
-      </label>
-    `;
+  sorted.forEach(([key, sec]) => list.appendChild(buildSectionRow(key, sec)));
 
-    row.querySelector('.section-toggle').addEventListener('change', (e) => {
-      if (!adminState.homeSections[key]) return;
-      adminState.homeSections[key].visible = e.target.checked;
-      e.target.nextElementSibling.textContent = e.target.checked ? 'Visível' : 'Oculta';
-    });
-
-    list.appendChild(row);
-  });
-
-  // Drag-sort reusing existing getDragAfterElement helper
+  // Drag-sort
   let dragged = null;
   list.addEventListener('dragstart', (e) => {
     dragged = e.target.closest('.sortable-item');
@@ -979,11 +996,99 @@ function initSectionsPanel() {
     else list.insertBefore(dragged, afterEl);
   });
 
-  document.getElementById('btnSaveSections')?.addEventListener('click', async () => {
-    list.querySelectorAll('.sortable-item').forEach((row, i) => {
-      const key = row.dataset.key;
-      if (adminState.homeSections[key]) adminState.homeSections[key].order = i;
+  // Salvar — protege contra listener duplicado (initSectionsPanel pode ser chamado mais de uma vez)
+  const btnSave = document.getElementById('btnSaveSections');
+  if (btnSave && !btnSave._bound) {
+    btnSave._bound = true;
+    btnSave.addEventListener('click', async () => {
+      list.querySelectorAll('.sortable-item').forEach((row, i) => {
+        const key = row.dataset.key;
+        if (adminState.homeSections[key]) adminState.homeSections[key].order = i;
+      });
+      await saveState();
     });
-    await saveState();
-  });
+  }
+
+  // Nova Seção
+  const btnNew = document.getElementById('btnNewSection');
+  if (btnNew && !btnNew._bound) {
+    btnNew._bound = true;
+    btnNew.addEventListener('click', () => openNewSectionModal());
+  }
+}
+
+function openNewSectionModal() {
+  const modal = document.getElementById('newSectionModal');
+  if (!modal) return;
+
+  // Limpa campos
+  document.getElementById('newSecTitle').value = '';
+  document.getElementById('newSecIcon').value = 'fa-layer-group';
+  document.getElementById('newSecIconPreview').className = 'fas fa-layer-group';
+  document.getElementById('newSecContent').value = 'all_courses';
+
+  // Gera grade de ícones de atalho
+  const grid = document.getElementById('newSecIconGrid');
+  if (grid && !grid.dataset.built) {
+    grid.dataset.built = '1';
+    const ICONS = ['fa-star','fa-fire','fa-trophy','fa-bookmark','fa-bolt',
+                   'fa-heart','fa-clock','fa-graduation-cap','fa-video','fa-tag',
+                   'fa-users','fa-chart-line','fa-thumbs-up','fa-gem','fa-rocket'];
+    ICONS.forEach(ic => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.title = ic;
+      btn.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 11px;cursor:pointer;color:var(--gray1);font-size:0.85rem;transition:background 0.15s';
+      btn.innerHTML = `<i class="fas ${ic}"></i>`;
+      btn.onmouseenter = () => { btn.style.background = 'var(--bg4)'; };
+      btn.onmouseleave = () => { btn.style.background = 'var(--bg3)'; };
+      btn.onclick = () => {
+        document.getElementById('newSecIcon').value = ic;
+        document.getElementById('newSecIconPreview').className = `fas ${ic}`;
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  // Enter no campo nome confirma
+  const titleInput = document.getElementById('newSecTitle');
+  titleInput.onkeydown = (e) => { if (e.key === 'Enter') confirmNewSection(); };
+
+  modal.classList.add('open');
+  titleInput.focus();
+}
+
+function closeNewSectionModal() {
+  document.getElementById('newSectionModal')?.classList.remove('open');
+}
+
+function confirmNewSection() {
+  const title   = document.getElementById('newSecTitle')?.value.trim();
+  const icon    = document.getElementById('newSecIcon')?.value.trim() || 'fa-layer-group';
+  const content = document.getElementById('newSecContent')?.value || 'custom';
+
+  if (!title) { showToast('Informe o nome da seção.', 'info'); return; }
+
+  // Gera chave única
+  const baseKey = 'custom_' + title.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/__+/g, '_');
+  let key = baseKey;
+  let n = 2;
+  while (adminState.homeSections[key]) { key = `${baseKey}_${n++}`; }
+
+  const maxOrder = Math.max(-1, ...Object.values(adminState.homeSections).map(s => s.order || 0));
+
+  adminState.homeSections[key] = {
+    title,
+    icon: icon.startsWith('fa-') ? icon : `fa-${icon}`,
+    visible: true,
+    order: maxOrder + 1,
+    content,   // 'all_courses' | 'new' | 'popular' | 'custom'
+    custom: true,
+  };
+
+  const list = document.getElementById('sectionsList');
+  if (list) list.appendChild(buildSectionRow(key, adminState.homeSections[key]));
+
+  closeNewSectionModal();
+  showToast(`Seção "${title}" criada! Clique em Salvar Seções para aplicar.`, 'success');
 }
