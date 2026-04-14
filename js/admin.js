@@ -5,6 +5,11 @@
 /* ---- STATE (carregado do localStorage ou dos dados padrão) ---- */
 let adminState = loadState();
 
+// Declaradas aqui para evitar Temporal Dead Zone — são usadas em funções
+// chamadas sincronamente durante a inicialização (linhas ~195-199)
+let editingCourseId = null;
+const BUILTIN_SECTION_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
+
 function loadState() {
   const defaults = {
     platform: {
@@ -554,7 +559,6 @@ function renderCoursesTable(courses = adminState.courses) {
   };
 }
 
-let editingCourseId = null;
 function openCourseModal(id) {
   // Normaliza para string para evitar mismatch number vs string de IDs do Supabase
   const sid = id != null ? String(id) : null;
@@ -1028,9 +1032,6 @@ function updateFeaturedOrder() {
 // =====================================================
 //  HOME SECTIONS PANEL
 // =====================================================
-
-// Seções built-in — não podem ser deletadas
-const BUILTIN_SECTION_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
 
 function buildSectionRow(key, sec) {
   const isCustom = !BUILTIN_SECTION_KEYS.has(key);
