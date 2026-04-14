@@ -566,32 +566,42 @@ function renderCarousels() {
 
   // IDs de cursos pinados a uma seção específica — esses NÃO aparecem nas seções automáticas
   const state = getAdminState();
+  const hs = state.homeSections || {};
+
   const pinnedIds = new Set();
-  Object.values(state.homeSections || {}).forEach(sec => {
+  Object.values(hs).forEach(sec => {
     (sec.courseIds || []).forEach(id => pinnedIds.add(String(id)));
   });
   // Cursos livres (sem seção fixada) entram nas seções automáticas
   const free = courses.filter(c => !pinnedIds.has(String(c.id)));
 
+  // Helper: se a seção built-in tiver courseIds fixados pelo admin, usa eles;
+  // caso contrário, usa a lógica automática padrão.
+  const pinnedFor = key => {
+    const sec = hs[key];
+    if (!sec || !sec.courseIds || !sec.courseIds.length) return null;
+    return sec.courseIds.map(id => COURSES.find(c => String(c.id) === String(id))).filter(Boolean);
+  };
+
   // "Continuar Assistindo" — só mostra se o usuário tem progresso real
-  const inProgress = free.filter(c => {
+  const inProgress = pinnedFor('continue') || free.filter(c => {
     const p = userProgress[c.id];
     return p && p.percent > 0 && p.percent < 100;
   });
   populatePosterCarousel('continueRow', inProgress);
 
-  const popular = [...free].sort((a, b) => b.rating - a.rating).slice(0, 10);
+  const popular = pinnedFor('popular') || [...free].sort((a, b) => b.rating - a.rating).slice(0, 10);
   populatePosterCarousel('popularRow', popular);
 
-  // Lançamentos: só cursos com badge new/hot
-  const newCourses = free.filter(c => c.badge === 'new' || c.badge === 'hot');
+  // Lançamentos: courseIds do admin ou filtra por badge
+  const newCourses = pinnedFor('new') || free.filter(c => c.badge === 'new' || c.badge === 'hot');
   populatePosterCarousel('newRow', newCourses);
 
   // Top 10
-  populatePosterCarousel('top10Row', free.slice(0, 10), { showRank: true });
+  populatePosterCarousel('top10Row', pinnedFor('top10') || free.slice(0, 10), { showRank: true });
 
   // Minha Lista — inclui todos (pinados ou não), pois é lista pessoal do usuário
-  const mylistCourses = courses.filter(c => MY_LIST.includes(c.id));
+  const mylistCourses = pinnedFor('mylist') || courses.filter(c => MY_LIST.includes(c.id));
   populatePosterCarousel('mylistRow', mylistCourses);
 
   renderFeaturedGrid();
@@ -737,10 +747,15 @@ function applyHomeSections(overrideSections) {
   if (!wrapper) return;
 
   // 1. Aplicar visibilidade nas seções built-in
+  //    Seções ocultas no admin → força display:none.
+  //    Seções visíveis → NÃO força display:''; deixa populatePosterCarousel
+  //    decidir se há conteúdo (evita mostrar seção vazia).
   Object.entries(sections).forEach(([key, sec]) => {
     const el = wrapper.querySelector(`[data-section-key="${key}"]`);
     if (!el) return;
-    el.style.display = sec.visible ? '' : 'none';
+    if (!sec.visible) {
+      el.style.display = 'none';
+    }
     // Atualiza título se foi customizado (para built-ins com title diferente)
     if (sec.title) {
       const h2 = el.querySelector('.section-header h2');
@@ -777,10 +792,10 @@ function renderCustomSections(sections) {
   if (!container) return;
   container.innerHTML = '';
 
-  // Renderiza seções custom E seções built-in que têm courseIds fixados pelo admin
-  const BUILTIN_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
+  // Renderiza APENAS seções genuinamente customizadas (criadas pelo admin).
+  // Seções built-in com courseIds são tratadas diretamente em renderCarousels().
   const customEntries = Object.entries(sections)
-    .filter(([key, sec]) => sec.custom || (BUILTIN_KEYS.has(key) && sec.courseIds && sec.courseIds.length > 0))
+    .filter(([, sec]) => sec.custom === true)
     .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
   if (!customEntries.length) return;
