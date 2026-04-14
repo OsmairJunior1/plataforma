@@ -25,7 +25,13 @@
   <!-- HERO -->
   <section class="landing-hero">
     <div class="landing-hero-bg" id="landingHeroBg">
-      <!-- mídia injetada via JS do painel admin -->
+      <!-- Vídeo com atributos HTML nativos — Android exige isso para autoplay funcionar -->
+      <video id="landingHeroVideo"
+             autoplay muted loop playsinline
+             webkit-playsinline
+             preload="auto"
+             style="display:none">
+      </video>
       <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1600&q=80" alt="Hero" id="landingHeroImg" />
     </div>
     <div class="landing-hero-content">
@@ -246,29 +252,26 @@
   <script>
     // ---- Aplica mídia de fundo da landing page (local + Supabase) ----
     function applyLandingMedia(url, type, poster) {
-      const bg  = document.getElementById('landingHeroBg');
+      if (!url) return;
+      const vid = document.getElementById('landingHeroVideo');
       const img = document.getElementById('landingHeroImg');
-      if (!bg || !url) return;
-      if (type === 'video') {
-        const vid = document.createElement('video');
-        // Ordem importa: muted ANTES de tudo (Android + iOS)
-        vid.muted = true;
-        vid.setAttribute('muted', '');
-        vid.setAttribute('autoplay', '');
-        vid.setAttribute('loop', '');
-        vid.setAttribute('playsinline', '');
-        vid.setAttribute('webkit-playsinline', '');
-        vid.setAttribute('preload', 'auto');
+
+      if (type === 'video' && vid) {
+        // Usa o elemento <video> já no HTML — Android respeita autoplay nativo
         if (poster) vid.poster = poster;
         vid.src = url;
-        if (img) img.replaceWith(vid); else bg.insertBefore(vid, bg.firstChild);
-        // Fallback: tenta play após canplay (Android Chrome às vezes precisa disso)
-        const tryPlay = () => vid.play().catch(() => {});
-        vid.addEventListener('canplay', tryPlay, { once: true });
+        vid.muted = true; // propriedade JS obrigatória além do atributo HTML
+        vid.style.display = '';
+        if (img) img.style.display = 'none';
         vid.load();
-        tryPlay();
-      } else {
-        if (img) img.src = url;
+        vid.play().catch(() => {
+          // Fallback: espera o vídeo estar pronto para tocar
+          vid.addEventListener('canplaythrough', () => vid.play().catch(() => {}), { once: true });
+        });
+      } else if (img) {
+        img.src = url;
+        img.style.display = '';
+        if (vid) vid.style.display = 'none';
       }
     }
 

@@ -64,7 +64,14 @@
   <!-- HERO BANNER -->
   <section class="hero" id="hero">
     <div class="hero-bg" id="heroBg">
-      <!-- mídia injetada via JS do painel -->
+      <!-- Vídeo com atributos HTML nativos — Android exige isso para autoplay funcionar -->
+      <video id="heroBgVideo"
+             autoplay muted loop playsinline
+             webkit-playsinline
+             preload="auto"
+             style="display:none">
+      </video>
+      <img id="heroBgImg" style="display:none" alt="Hero" />
       <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
@@ -84,22 +91,22 @@
   </section>
 
 
-  <!-- FEATURED GRID (right after hero) -->
-  <section class="featured-section">
-    <div class="section-header">
-      <h2><i class="fas fa-star"></i> Em Destaque</h2>
-      <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
-    </div>
-    <div class="featured-grid" id="featuredPosterGrid">
-      <!-- Preenchido via JS -->
-    </div>
-  </section>
+  <!-- SEÇÕES DA HOME — ordenação e visibilidade controladas pelo painel admin -->
+  <main class="main-content" id="sectionsWrapper">
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
+    <!-- FEATURED GRID -->
+    <section class="featured-section" data-section-key="featured">
+      <div class="section-header">
+        <h2><i class="fas fa-star"></i> Em Destaque</h2>
+        <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
+      </div>
+      <div class="featured-grid" id="featuredPosterGrid">
+        <!-- Preenchido via JS -->
+      </div>
+    </section>
 
     <!-- SECTION: CONTINUE WATCHING -->
-    <section class="section poster-carousel-row">
+    <section class="section poster-carousel-row" data-section-key="continue">
       <div class="section-header">
         <h2><i class="fas fa-history"></i> Continuar Assistindo</h2>
         <a href="meus-cursos.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
@@ -112,7 +119,7 @@
     </section>
 
     <!-- SECTION: POPULAR -->
-    <section class="section poster-carousel-row">
+    <section class="section poster-carousel-row" data-section-key="popular">
       <div class="section-header">
         <h2><i class="fas fa-fire"></i> Mais Populares</h2>
         <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
@@ -125,7 +132,7 @@
     </section>
 
     <!-- SECTION: NEW RELEASES -->
-    <section class="section poster-carousel-row" id="novidades">
+    <section class="section poster-carousel-row" id="novidades" data-section-key="new">
       <div class="section-header">
         <h2><i class="fas fa-sparkles"></i> Lançamentos</h2>
         <a href="catalogo.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
@@ -138,7 +145,7 @@
     </section>
 
     <!-- TOP 10 -->
-    <section class="section poster-carousel-row">
+    <section class="section poster-carousel-row" data-section-key="top10">
       <div class="section-header">
         <h2><i class="fas fa-trophy"></i> Top 10 da Semana</h2>
       </div>
@@ -153,7 +160,7 @@
     <div id="trailsContainer"></div>
 
     <!-- SECTION: MY LIST -->
-    <section class="section poster-carousel-row" id="mylistSection">
+    <section class="section poster-carousel-row" id="mylistSection" data-section-key="mylist">
       <div class="section-header">
         <h2><i class="fas fa-bookmark"></i> Minha Lista</h2>
         <a href="minha-lista.html" class="see-all">Ver todos <i class="fas fa-chevron-right"></i></a>
@@ -165,8 +172,8 @@
       </div>
     </section>
 
-    <!-- SECTION: CATEGORIES (dynamic, last position) -->
-    <section class="section poster-carousel-row" id="categorias">
+    <!-- SECTION: CATEGORIES -->
+    <section class="section poster-carousel-row" id="categorias" data-section-key="categories">
       <div class="section-header">
         <h2><i class="fas fa-th-large"></i> Explorar por Categoria</h2>
       </div>
@@ -174,6 +181,9 @@
         <!-- Preenchido via JS a partir dos cursos cadastrados -->
       </div>
     </section>
+
+    <!-- SEÇÕES CUSTOMIZADAS (injetadas via JS) -->
+    <div id="customSectionsContainer"></div>
 
   </main>
 
@@ -253,32 +263,25 @@
       if (b && data.hero_badge) b.textContent = data.hero_badge;
       const d = document.getElementById('heroDescEl');
       if (d) d.textContent = data.hero_description || '';
-      const bg = document.getElementById('heroBg');
-      if (bg && data.hero_url) {
-        bg.querySelectorAll('video, img.hero-img').forEach(e => e.remove());
-        const ov = bg.querySelector('.hero-overlay');
+      if (data.hero_url) {
+        const vid = document.getElementById('heroBgVideo');
+        const img = document.getElementById('heroBgImg');
         if (data.hero_type === 'image') {
-          const img = document.createElement('img');
-          img.className = 'hero-img'; img.src = data.hero_url; img.alt = 'Hero';
-          bg.insertBefore(img, ov);
+          if (vid) vid.style.display = 'none';
+          if (img) { img.src = data.hero_url; img.style.display = 'block'; img.className = 'hero-img'; }
         } else {
-          const vid = document.createElement('video');
-          vid.className = 'hero-video';
-          vid.setAttribute('autoplay', '');
-          vid.setAttribute('muted', '');
-          vid.setAttribute('loop', '');
-          vid.setAttribute('playsinline', '');
-          vid.setAttribute('webkit-playsinline', '');
-          vid.muted = true;
-          vid.setAttribute('muted', '');
-          vid.setAttribute('preload', 'auto');
-          if (data.hero_poster) vid.poster = data.hero_poster;
-          vid.src = data.hero_url;
-          bg.insertBefore(vid, ov);
-          const _tp = () => vid.play().catch(() => {});
-          vid.addEventListener('canplay', _tp, { once: true });
-          vid.load();
-          _tp();
+          if (img) img.style.display = 'none';
+          if (vid) {
+            vid.className = 'hero-video';
+            vid.style.display = 'block';
+            if (data.hero_poster) vid.poster = data.hero_poster;
+            vid.src = data.hero_url;
+            vid.muted = true;
+            const _tp = () => vid.play().catch(() => {});
+            vid.addEventListener('canplay', _tp, { once: true });
+            vid.load();
+            _tp();
+          }
         }
       }
       // Botão "Assistir Agora" — busca o curso em destaque e abre o player
