@@ -72,16 +72,38 @@ async function saveState() {
 
   // 2. Persistir settings no Supabase
   const cfg = SupabaseDB.stateToSettings(adminState);
-  const ok  = await SupabaseDB.saveSettings(cfg);
+  const { ok, label } = await SupabaseDB.saveSettings(cfg);
 
   logActivity('Configurações salvas', 'fa-save', '#00c853');
-  showToast(ok ? 'Salvo no banco! Todos os usuários verão as mudanças.' : 'Salvo localmente (verifique a conexão).', ok ? 'success' : 'info');
+
+  // Avisa se seções/trilhas foram descartadas por colunas ausentes
+  if (!ok) {
+    showToast('Salvo localmente (verifique a conexão com o Supabase).', 'info');
+  } else if (label && label !== 'completo') {
+    showToast('⚠️ Configurações gerais salvas, mas Seções e Trilhas precisam de migração SQL. Veja o aviso na aba Seções da Home.', 'info');
+  } else {
+    showToast('Salvo no banco! Todos os usuários verão as mudanças.', 'success');
+  }
 }
 
 /** Carrega estado do Supabase e atualiza todos os painéis. */
+// Detecta se a migração SQL já foi executada no Supabase
+function _checkMigration(row) {
+  const needsMigration = row.trails === undefined || row.home_sections === undefined;
+  const banner = document.getElementById('migrationWarning');
+  if (!banner) return;
+  if (needsMigration) {
+    banner.style.display = '';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
 async function loadStateFromSupabase() {
   const row = await SupabaseDB.getSettings();
   if (!row) return;
+
+  _checkMigration(row);
 
   const remote = SupabaseDB.settingsToState(row);
   adminState.platform = { ...adminState.platform, ...remote.platform };
@@ -662,7 +684,7 @@ async function toggleFeatured(id) {
   const course = adminState.courses.find(c => c.id === id);
   if (course) await SupabaseDB.saveCourse({ ...course, featured: isFeatured });
   // Salva lista de featured nas settings
-  await SupabaseDB.saveSettings(SupabaseDB.stateToSettings(adminState));
+  await SupabaseDB.saveSettings(SupabaseDB.stateToSettings(adminState)); // retorno ignorado aqui (não é salvar seções)
   try { localStorage.setItem('vgracademy_admin', JSON.stringify(adminState)); } catch(e) {}
   renderCoursesTable();
   renderFeaturedList();
