@@ -496,10 +496,10 @@ function renderCoursesTable(courses = adminState.courses) {
   const tbody = document.getElementById('coursesTableBody');
   if (!tbody) return;
   if (!courses.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--gray2);padding:20px;text-align:center">Nenhum curso encontrado.</td></tr>'; return; }
-  // IDs numéricos usados em onclick — garantir que são inteiros antes de interpolar
   tbody.innerHTML = courses.map(c => {
-    const safeId = parseInt(c.id, 10);
-    const isFeatured = adminState.featured.includes(c.id);
+    // Usa o id como string segura para onclick — evita NaN com IDs do Supabase
+    const safeId = JSON.stringify(String(c.id));
+    const isFeatured = adminState.featured.map(String).includes(String(c.id));
     return `
     <tr>
       <td><img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.title)}" class="table-thumb" onerror="this.src='https://via.placeholder.com/70x40/1e1e1e/666?text=Sem+Imagem'" /></td>
@@ -531,6 +531,7 @@ function renderCoursesTable(courses = adminState.courses) {
             <i class="fas fa-star" style="color:${isFeatured ? '#ffd700' : 'inherit'}"></i>
           </button>
           <button class="btn btn-outline btn-icon-only btn-sm" onclick="deleteCourse(${safeId})" title="Excluir" style="color:#e57373"><i class="fas fa-trash"></i></button>
+
         </div>
       </td>
     </tr>
@@ -540,8 +541,10 @@ function renderCoursesTable(courses = adminState.courses) {
 
 let editingCourseId = null;
 function openCourseModal(id) {
-  editingCourseId = id;
-  const course = id ? adminState.courses.find(c => c.id === id) : null;
+  // Normaliza para string para evitar mismatch number vs string de IDs do Supabase
+  const sid = id != null ? String(id) : null;
+  editingCourseId = sid;
+  const course = sid ? adminState.courses.find(c => String(c.id) === sid) : null;
   const title = id ? 'Editar Curso' : 'Novo Curso';
 
   document.getElementById('courseModalTitle').textContent = title;
@@ -624,14 +627,14 @@ async function saveCourse() {
   }
 
   if (editingCourseId) {
-    const existing = adminState.courses.find(c => c.id === editingCourseId);
+    const existing = adminState.courses.find(c => String(c.id) === String(editingCourseId));
     const updated  = { ...existing, ...data, id: editingCourseId };
     const saved    = await SupabaseDB.saveCourse(updated);
     if (saved) {
-      const idx = adminState.courses.findIndex(c => c.id === editingCourseId);
+      const idx = adminState.courses.findIndex(c => String(c.id) === String(editingCourseId));
       if (idx > -1) adminState.courses[idx] = SupabaseDB.courseToLocal(saved);
     } else {
-      const idx = adminState.courses.findIndex(c => c.id === editingCourseId);
+      const idx = adminState.courses.findIndex(c => String(c.id) === String(editingCourseId));
       if (idx > -1) adminState.courses[idx] = { ...adminState.courses[idx], ...data };
     }
     logActivity(`Curso editado: ${data.title}`, 'fa-pen', '#2196f3');
@@ -665,10 +668,11 @@ async function saveCourse() {
 
 async function deleteCourse(id) {
   if (!confirm('Tem certeza que deseja excluir este curso?')) return;
-  const course = adminState.courses.find(c => c.id === id);
+  const sid = String(id);
+  const course = adminState.courses.find(c => String(c.id) === sid);
   await SupabaseDB.deleteCourse(id);
-  adminState.courses  = adminState.courses.filter(c => c.id !== id);
-  adminState.featured = adminState.featured.filter(fid => fid !== id);
+  adminState.courses  = adminState.courses.filter(c => String(c.id) !== sid);
+  adminState.featured = adminState.featured.filter(fid => String(fid) !== sid);
   try { localStorage.setItem('vgracademy_admin', JSON.stringify(adminState)); } catch(e) {}
   renderCoursesTable();
   initDashboard();
@@ -676,12 +680,13 @@ async function deleteCourse(id) {
 }
 
 async function toggleFeatured(id) {
-  const idx = adminState.featured.indexOf(id);
+  const sid = String(id);
+  const idx = adminState.featured.findIndex(fid => String(fid) === sid);
   if (idx === -1) adminState.featured.push(id);
   else adminState.featured.splice(idx, 1);
-  const isFeatured = adminState.featured.includes(id);
+  const isFeatured = adminState.featured.some(fid => String(fid) === sid);
   // Atualiza flag featured no curso no Supabase
-  const course = adminState.courses.find(c => c.id === id);
+  const course = adminState.courses.find(c => String(c.id) === sid);
   if (course) await SupabaseDB.saveCourse({ ...course, featured: isFeatured });
   // Salva lista de featured nas settings
   await SupabaseDB.saveSettings(SupabaseDB.stateToSettings(adminState)); // retorno ignorado aqui (não é salvar seções)
