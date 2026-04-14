@@ -26,8 +26,9 @@ function getAdminState() {
                || localStorage.getItem('eduflix_admin');
     if (saved) return JSON.parse(saved);
   } catch(e) {}
-  // Retorna o estado padrão com os cursos do data.js
-  return { ...DEFAULT_STATE, courses: COURSES };
+  // Sem cache local: retorna estado padrão SEM cursos hardcoded
+  // (os cursos reais virão do Supabase em segundo plano)
+  return { ...DEFAULT_STATE, courses: [] };
 }
 
 function applyAdminState(overrideState) {
@@ -257,13 +258,22 @@ applyAdminState();
   // --- Cursos (independente dos settings) ---
   try {
     const courses = await SupabaseDB.getCourses({ activeOnly: true });
-    if (courses?.length) {
+    // courses === null  → erro de conexão → usa fallback local
+    // courses === []    → Supabase ok mas sem cursos cadastrados → limpa COURSES
+    // courses.length>0  → usa cursos do banco
+    if (courses !== null) {
       remoteState.courses = courses.map(c => SupabaseDB.courseToLocal(c));
-      if (!remoteState.featured?.length) {
+      if (courses.length) {
         const featFromDB = courses.filter(c => c.featured).map(c => c.id);
-        if (featFromDB.length) remoteState.featured = featFromDB;
+        if (featFromDB.length && !remoteState.featured?.length) remoteState.featured = featFromDB;
+      } else {
+        // Sem cursos no banco: limpa lista de destaques também
+        remoteState.featured = [];
       }
       changed = true;
+      // Substitui COURSES global pelos dados do Supabase (ou array vazio)
+      COURSES.length = 0;
+      remoteState.courses.forEach(c => COURSES.push(c));
       try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
       applyAdminState(remoteState);
       if (typeof renderCarousels === 'function') renderCarousels();
@@ -1104,8 +1114,7 @@ if (document.getElementById('myCoursesGrid')) {
 
 /* ---- SUPABASE: logout e MY_LIST ---- */
 
-// MY_LIST: inicializado vazio; populado quando auth completa
-let MY_LIST = [];
+// MY_LIST declarado em data.js — aqui apenas sincronizamos após auth
 
 // Quando auth.js completar (evento vgr:auth-ready), atualizar MY_LIST e re-renderizar
 document.addEventListener('vgr:auth-ready', (e) => {
