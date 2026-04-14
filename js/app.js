@@ -223,34 +223,26 @@ applyAdminState();
         const _desc = document.getElementById('heroDescEl');
         if (_desc) _desc.textContent = h.description || '';
 
-        const _bg = document.getElementById('heroBg');
-        if (_bg && h.url) {
-          _bg.querySelectorAll('video, img.hero-video, img.hero-img').forEach(el => el.remove());
-          const _ov = _bg.querySelector('.hero-overlay');
+        // Reutiliza elementos nativos (fix autoplay Android)
+        const _vid = document.getElementById('heroBgVideo');
+        const _img = document.getElementById('heroBgImg');
+        if (h.url) {
           if (h.type === 'image') {
-            const _img = document.createElement('img');
-            _img.className = 'hero-img';
-            _img.src = h.url;
-            _img.alt = 'Hero';
-            _bg.insertBefore(_img, _ov || null);
+            if (_vid) _vid.style.display = 'none';
+            if (_img) { _img.className = 'hero-img'; _img.src = h.url; _img.style.display = 'block'; }
           } else {
-            const _vid = document.createElement('video');
-            _vid.className = 'hero-video';
-            _vid.setAttribute('autoplay', '');
-            _vid.setAttribute('muted', '');
-            _vid.setAttribute('loop', '');
-            _vid.setAttribute('playsinline', '');
-            _vid.setAttribute('webkit-playsinline', '');
-            _vid.muted = true;
-            _vid.setAttribute('muted', '');
-            _vid.setAttribute('preload', 'auto');
-            if (h.poster) _vid.poster = h.poster;
-            _vid.src = h.url;
-            _bg.insertBefore(_vid, _ov || null);
-            const _tp = () => _vid.play().catch(() => {});
-            _vid.addEventListener('canplay', _tp, { once: true });
-            _vid.load();
-            _tp();
+            if (_img) _img.style.display = 'none';
+            if (_vid) {
+              _vid.className = 'hero-video';
+              _vid.style.display = 'block';
+              if (h.poster) _vid.poster = h.poster;
+              _vid.src = h.url;
+              _vid.muted = true;
+              const _tp = () => _vid.play().catch(() => {});
+              _vid.addEventListener('canplay', _tp, { once: true });
+              _vid.load();
+              _tp();
+            }
           }
         }
       } catch(_e) {
@@ -274,6 +266,7 @@ applyAdminState();
       try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
       applyAdminState(remoteState);
       if (typeof renderCarousels === 'function') renderCarousels();
+      if (typeof applyHomeSections === 'function') applyHomeSections();
     }
   } catch(e) {
     console.warn('[app] getCourses falhou:', e.message);
@@ -765,7 +758,10 @@ function renderCustomSections(sections) {
     const title = escapeHtml(sec.title || 'Seção');
 
     let courses = [];
-    if (sec.content === 'all_courses') {
+    if (sec.courseIds && sec.courseIds.length) {
+      // Cursos curados manualmente pelo admin
+      courses = sec.courseIds.map(id => COURSES.find(c => c.id === id || c.id === Number(id))).filter(Boolean);
+    } else if (sec.content === 'all_courses') {
       courses = COURSES.slice(0, 12);
     } else if (sec.content === 'popular') {
       courses = [...COURSES].sort((a, b) => b.rating - a.rating).slice(0, 10);

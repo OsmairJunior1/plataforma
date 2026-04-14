@@ -623,6 +623,19 @@
 
       <div class="form-row">
         <div class="form-group">
+          <label><i class="fas fa-layer-group"></i> Seção na Home</label>
+          <select class="form-select" id="courseSectionKey">
+            <option value="">Automático (lógica padrão)</option>
+            <!-- Populado via JS ao abrir modal -->
+          </select>
+          <small style="color:rgba(255,255,255,0.35);font-size:0.72rem;margin-top:3px;display:block">
+            Aparece no carrossel da seção escolhida. "Automático" usa as regras normais (popularidade, novidade, etc).
+          </small>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
           <label><i class="fas fa-tags"></i> Tags (separadas por vírgula)</label>
           <input type="text" class="form-input" id="courseTags" placeholder="Ex: SEO, Google, Tráfego" />
         </div>
