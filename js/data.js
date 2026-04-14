@@ -220,8 +220,8 @@ const LESSONS = {
   ]
 };
 
-// My list (saved courses)
-let MY_LIST = [1, 5, 7, 10];
+// My list (saved courses) — começa vazia; populada via Supabase no auth
+let MY_LIST = [];
 
 // Recently watched
 const RECENTLY_WATCHED = [2, 4, 9, 6];
