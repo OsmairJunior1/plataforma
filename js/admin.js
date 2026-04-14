@@ -441,8 +441,10 @@ function updateHeroPreview() {
 function initCoursesPanel() {
   renderCoursesTable();
 
-  document.getElementById('btnAddCourse')?.addEventListener('click', () => openCourseModal(null));
-  document.getElementById('btnSaveCourse')?.addEventListener('click', saveCourse);
+  const btnAdd = document.getElementById('btnAddCourse');
+  if (btnAdd && !btnAdd._bound) { btnAdd._bound = true; btnAdd.addEventListener('click', () => openCourseModal(null)); }
+  const btnSave = document.getElementById('btnSaveCourse');
+  if (btnSave && !btnSave._bound) { btnSave._bound = true; btnSave.addEventListener('click', saveCourse); }
   document.getElementById('courseSearch')?.addEventListener('input', (e) => {
     const q = e.target.value.toLowerCase();
     renderCoursesTable(adminState.courses.filter(c => c.title.toLowerCase().includes(q) || c.category.includes(q)));
@@ -483,7 +485,16 @@ function renderCoursesTable(courses = adminState.courses) {
         <div class="table-title">${escapeHtml(c.title)}</div>
         <small style="color:var(--gray2);font-size:0.7rem">${escapeHtml(c.instructor || 'Sem instrutor')}</small>
       </td>
-      <td><span style="font-size:0.78rem;color:var(--gray)">${escapeHtml(c.category)}</span></td>
+      <td>
+        <span style="font-size:0.78rem;color:var(--gray)">${escapeHtml(c.category)}</span>
+        ${(() => {
+          const secEntry = Object.entries(adminState.homeSections || {})
+            .find(([, s]) => (s.courseIds || []).map(Number).includes(Number(c.id)));
+          return secEntry
+            ? `<br><span style="font-size:0.68rem;color:var(--red);font-weight:600"><i class="fas fa-layer-group"></i> ${escapeHtml(secEntry[1].title || secEntry[0])}</span>`
+            : '';
+        })()}
+      </td>
       <td>
         <span class="status-badge ${isFeatured ? 'status-featured' : 'status-active'}">
           ${isFeatured ? '<i class="fas fa-star"></i> Destaque' : '<i class="fas fa-circle"></i> Ativo'}
@@ -530,6 +541,24 @@ function openCourseModal(id) {
   document.getElementById('courseThumbPreview').src = course?.thumb || '';
   document.getElementById('courseHeroPreview').src = course?.hero || '';
 
+  // Popular select de seção com as seções atuais do admin
+  const secSelect = document.getElementById('courseSectionKey');
+  if (secSelect) {
+    // Descobre em qual seção este curso está
+    let currentSectionKey = '';
+    if (id) {
+      for (const [k, s] of Object.entries(adminState.homeSections || {})) {
+        if ((s.courseIds || []).map(Number).includes(Number(id))) { currentSectionKey = k; break; }
+      }
+    }
+    const hs = adminState.homeSections || {};
+    secSelect.innerHTML = `<option value="">Automático (lógica padrão)</option>`
+      + Object.entries(hs)
+          .sort((a, b) => (a[1].order || 0) - (b[1].order || 0))
+          .map(([k, s]) => `<option value="${escapeHtml(k)}" ${k === currentSectionKey ? 'selected' : ''}>${escapeHtml(s.title || k)}</option>`)
+          .join('');
+  }
+
   openModal('courseModal');
 }
 
@@ -555,6 +584,22 @@ async function saveCourse() {
     details: getVal('courseDetails').trim(),
     progress: 0,
   };
+
+  // Gerencia atribuição de seção: remove do seção anterior, adiciona na nova
+  const newSectionKey = getVal('courseSectionKey');
+  const courseId = editingCourseId || null;
+  // Remove este curso de todas as seções onde estava
+  Object.values(adminState.homeSections || {}).forEach(s => {
+    if (s.courseIds) s.courseIds = s.courseIds.map(Number).filter(i => i !== Number(courseId));
+  });
+  // Adiciona na nova seção (se escolhida)
+  if (newSectionKey && adminState.homeSections[newSectionKey]) {
+    if (!adminState.homeSections[newSectionKey].courseIds) adminState.homeSections[newSectionKey].courseIds = [];
+    const numId = editingCourseId || (Date.now()); // id temporário para novos cursos (será substituído após save)
+    if (!adminState.homeSections[newSectionKey].courseIds.map(Number).includes(Number(numId))) {
+      adminState.homeSections[newSectionKey].courseIds.push(numId);
+    }
+  }
 
   if (editingCourseId) {
     const existing = adminState.courses.find(c => c.id === editingCourseId);
@@ -583,6 +628,17 @@ async function saveCourse() {
   closeModal('courseModal');
   renderCoursesTable();
   initDashboard();
+  // Se atribuiu uma nova seção, atualiza o courseId correto (em caso de curso novo)
+  if (newSectionKey && adminState.homeSections[newSectionKey] && !editingCourseId) {
+    const newCourse = adminState.courses[adminState.courses.length - 1];
+    if (newCourse) {
+      const ids = adminState.homeSections[newSectionKey].courseIds || [];
+      // Remove o id temporário (Date.now-like) e coloca o real
+      adminState.homeSections[newSectionKey].courseIds = ids
+        .filter(i => Math.abs(Number(i) - Date.now()) > 1000) // remove ids muito grandes (temporários)
+        .concat(newCourse.id);
+    }
+  }
 }
 
 async function deleteCourse(id) {
