@@ -175,8 +175,9 @@ applyAdminState();
       remoteState.platform = s.platform;
       remoteState.hero     = s.hero;
       remoteState.landing  = s.landing;
-      if (s.featured?.length) remoteState.featured = s.featured;
-      if (s.trails?.length)   remoteState.trails   = s.trails;
+      if (s.featured?.length)  remoteState.featured     = s.featured;
+      if (s.trails?.length)    remoteState.trails       = s.trails;
+      if (s.homeSections)      remoteState.homeSections = { ...(remoteState.homeSections || {}), ...s.homeSections };
       changed = true;
 
       // Sincroniza hero → vgracademy_db para cache offline

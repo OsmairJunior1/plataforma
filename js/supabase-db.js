@@ -35,27 +35,37 @@ const SupabaseDB = {
    */
   async saveSettings(cfg) {
     if (!this._ok()) return false;
-    try {
-      const { error } = await supabaseClient
-        .from('platform_settings')
-        .upsert({ id: 1, ...cfg, updated_at: new Date().toISOString() });
-      if (error) throw error;
-      return true;
-    } catch (e) {
-      // Tenta salvar sem o campo trails (pode não existir ainda no banco)
+
+    // Tentativas progressivas — trata colunas ausentes no banco (trails, home_sections)
+    const strip = (obj, ...keys) => {
+      const r = { ...obj };
+      keys.forEach(k => delete r[k]);
+      return r;
+    };
+
+    const attempts = [
+      { payload: cfg,                                          label: 'completo' },
+      { payload: strip(cfg, 'trails'),                        label: 'sem trails' },
+      { payload: strip(cfg, 'home_sections'),                 label: 'sem home_sections' },
+      { payload: strip(cfg, 'trails', 'home_sections'),       label: 'sem trails+home_sections' },
+    ];
+
+    for (const { payload, label } of attempts) {
       try {
-        const { trails: _t, ...cfgSemTrails } = cfg;
-        const { error: e2 } = await supabaseClient
+        const { error } = await supabaseClient
           .from('platform_settings')
-          .upsert({ id: 1, ...cfgSemTrails, updated_at: new Date().toISOString() });
-        if (e2) throw e2;
-        console.warn('[SupabaseDB] Salvo sem trails. Execute o SQL de migração para ativar trilhas.');
-        return true;
-      } catch (e3) {
-        console.error('[SupabaseDB] saveSettings:', e.message, '| fallback:', e3.message);
-        return false;
-      }
+          .upsert({ id: 1, ...payload, updated_at: new Date().toISOString() });
+        if (!error) {
+          if (label !== 'completo') {
+            console.warn(`[SupabaseDB] Salvo (${label}). Execute o SQL de migração para ativar todas as colunas.`);
+          }
+          return true;
+        }
+      } catch (_) { /* tenta próxima variante */ }
     }
+
+    console.error('[SupabaseDB] saveSettings: todas as tentativas falharam.');
+    return false;
   },
 
   // --------------------------------------------------
