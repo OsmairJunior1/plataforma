@@ -563,25 +563,33 @@ function renderCarousels() {
   const user = window.CURRENT_USER;
   const userProgress = user?.progress || {};
 
+  // IDs de cursos pinados a uma seção específica — esses NÃO aparecem nas seções automáticas
+  const state = getAdminState();
+  const pinnedIds = new Set();
+  Object.values(state.homeSections || {}).forEach(sec => {
+    (sec.courseIds || []).forEach(id => pinnedIds.add(String(id)));
+  });
+  // Cursos livres (sem seção fixada) entram nas seções automáticas
+  const free = courses.filter(c => !pinnedIds.has(String(c.id)));
+
   // "Continuar Assistindo" — só mostra se o usuário tem progresso real
-  const inProgress = courses.filter(c => {
+  const inProgress = free.filter(c => {
     const p = userProgress[c.id];
     return p && p.percent > 0 && p.percent < 100;
   });
-  // populatePosterCarousel já oculta a seção quando lista é vazia
   populatePosterCarousel('continueRow', inProgress);
 
-  const popular = [...courses].sort((a, b) => b.rating - a.rating).slice(0, 10);
+  const popular = [...free].sort((a, b) => b.rating - a.rating).slice(0, 10);
   populatePosterCarousel('popularRow', popular);
 
-  // Lançamentos: só cursos marcados com badge new/hot — sem fallback para cursos genéricos
-  const newCourses = courses.filter(c => c.badge === 'new' || c.badge === 'hot');
+  // Lançamentos: só cursos com badge new/hot
+  const newCourses = free.filter(c => c.badge === 'new' || c.badge === 'hot');
   populatePosterCarousel('newRow', newCourses);
 
-  // Top 10: só exibe se houver cursos cadastrados
-  populatePosterCarousel('top10Row', courses.slice(0, 10), { showRank: true });
+  // Top 10
+  populatePosterCarousel('top10Row', free.slice(0, 10), { showRank: true });
 
-  // Minha Lista
+  // Minha Lista — inclui todos (pinados ou não), pois é lista pessoal do usuário
   const mylistCourses = courses.filter(c => MY_LIST.includes(c.id));
   populatePosterCarousel('mylistRow', mylistCourses);
 
@@ -765,8 +773,10 @@ function renderCustomSections(sections) {
   if (!container) return;
   container.innerHTML = '';
 
+  // Renderiza seções custom E seções built-in que têm courseIds fixados pelo admin
+  const BUILTIN_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
   const customEntries = Object.entries(sections)
-    .filter(([, sec]) => sec.custom)
+    .filter(([key, sec]) => sec.custom || (BUILTIN_KEYS.has(key) && sec.courseIds && sec.courseIds.length > 0))
     .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
   if (!customEntries.length) return;
@@ -780,8 +790,8 @@ function renderCustomSections(sections) {
 
     let courses = [];
     if (sec.courseIds && sec.courseIds.length) {
-      // Cursos curados manualmente pelo admin
-      courses = sec.courseIds.map(id => COURSES.find(c => c.id === id || c.id === Number(id))).filter(Boolean);
+      // Cursos curados manualmente pelo admin — usa String() para evitar mismatch number/string
+      courses = sec.courseIds.map(id => COURSES.find(c => String(c.id) === String(id))).filter(Boolean);
     } else if (sec.content === 'all_courses') {
       courses = COURSES.slice(0, 12);
     } else if (sec.content === 'popular') {
