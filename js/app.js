@@ -277,7 +277,8 @@ applyAdminState();
       try { localStorage.setItem('vgracademy_admin', JSON.stringify(remoteState)); } catch(e) {}
       applyAdminState(remoteState);
       if (typeof renderCarousels === 'function') renderCarousels();
-      if (typeof applyHomeSections === 'function') applyHomeSections();
+      // Passa homeSections direto do remoteState para garantir ordem/visibilidade do Supabase
+      if (typeof applyHomeSections === 'function') applyHomeSections(remoteState.homeSections);
     }
   } catch(e) {
     console.warn('[app] getCourses falhou:', e.message);
@@ -724,9 +725,12 @@ function renderCategoriesGrid() {
 }
 
 /* ---- APPLY HOME SECTIONS (order, visibility, custom) ---- */
-function applyHomeSections() {
+function applyHomeSections(overrideSections) {
   const state = getAdminState();
-  const sections = state.homeSections;
+  // Usa override se passado (vindo direto do Supabase), senão lê do localStorage
+  const sections = (overrideSections && Object.keys(overrideSections).length > 0)
+    ? overrideSections
+    : state.homeSections;
   if (!sections || !Object.keys(sections).length) return;
 
   const wrapper = document.getElementById('sectionsWrapper');

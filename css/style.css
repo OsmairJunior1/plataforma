@@ -1578,18 +1578,16 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
    ============================================================ */
 .featured-section {
   padding: 0 4% 0;
-  margin-top: -72px;
+  margin-top: 32px;   /* abaixo do hero, alinhado com as demais seções */
   position: relative;
   z-index: 10;
 }
 
-/* sectionsWrapper herda o padding do main-content mas não precisa de padding-top
-   pois a featured-section usa margin-top negativo para sobrepor o hero */
 #sectionsWrapper { padding-top: 0 !important; }
 
 .featured-section .section-header {
   margin-bottom: 20px;
-  padding-bottom: 0;
+  padding: 0;         /* remove padding lateral duplicado — já tem o 4% do pai */
   border: none;
 }
 
@@ -1722,7 +1720,7 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
 
 @media (max-width: 768px) {
   :root { --poster-w: 130px; }
-  .featured-section { margin-top: -40px; }
+  .featured-section { margin-top: 24px; }
   .featured-grid .poster-card:first-child { grid-row: span 1; }
   .poster-actions { display: none; }
   .poster-info { padding-bottom: 10px; }
@@ -1731,7 +1729,7 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
 
 @media (max-width: 480px) {
   :root { --poster-w: 110px; }
-  .featured-section { margin-top: -24px; padding: 0 3%; }
+  .featured-section { margin-top: 16px; padding: 0 3%; }
   .featured-grid { gap: 10px; }
   .poster-title { font-size: 0.7rem; }
   .poster-meta { display: none; }
