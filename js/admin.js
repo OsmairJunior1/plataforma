@@ -143,10 +143,13 @@ async function loadStateFromSupabase() {
     });
   }
 
-  // Cursos do Supabase
+  // Cursos do Supabase — deduplicar por id para evitar entradas repetidas
   const courses = await SupabaseDB.getCourses({ activeOnly: false });
   if (courses?.length) {
-    adminState.courses = courses.map(c => SupabaseDB.courseToLocal(c));
+    const seen = new Set();
+    adminState.courses = courses
+      .map(c => SupabaseDB.courseToLocal(c))
+      .filter(c => { const k = String(c.id); if (seen.has(k)) return false; seen.add(k); return true; });
     // Rebuild featured list from featured flag
     const featuredFromDB = courses.filter(c => c.featured).map(c => c.id);
     if (featuredFromDB.length) adminState.featured = featuredFromDB;
@@ -685,10 +688,6 @@ async function saveCourse() {
     logActivity(`Curso criado: ${data.title}`, 'fa-plus', '#00c853');
   }
 
-  try { localStorage.setItem('vgracademy_admin', JSON.stringify(adminState)); } catch(e) {}
-  closeModal('courseModal');
-  renderCoursesTable();
-  initDashboard();
   // Se atribuiu uma nova seção, substitui placeholder '__new__' pelo ID real do curso criado
   if (newSectionKey && adminState.homeSections[newSectionKey] && !editingCourseId) {
     const newCourse = adminState.courses[adminState.courses.length - 1];
@@ -698,6 +697,12 @@ async function saveCourse() {
         .concat(String(newCourse.id));
     }
   }
+
+  // Persiste tudo (curso + homeSections) no Supabase e localStorage
+  await saveState();
+  closeModal('courseModal');
+  renderCoursesTable();
+  initDashboard();
 }
 
 async function deleteCourse(id) {
