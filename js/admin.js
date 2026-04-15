@@ -7,7 +7,9 @@ let adminState = loadState();
 
 // Declaradas aqui para evitar Temporal Dead Zone — são usadas em funções
 // chamadas sincronamente durante a inicialização (linhas ~195-199)
-let editingCourseId = null;
+let editingCourseId  = null;
+let editingModules   = [];
+let editingMaterials = [];
 const BUILTIN_SECTION_KEYS = new Set(['featured','continue','popular','new','top10','mylist','categories']);
 
 function loadState() {
@@ -591,6 +593,10 @@ function openCourseModal(id) {
   document.getElementById('courseThumbPreview').src = course?.thumb || '';
   document.getElementById('courseHeroPreview').src = course?.hero || '';
 
+  // Populate modules & materials builders
+  renderModulesBuilder(course?.modules || []);
+  renderMaterialsBuilder(course?.materials || []);
+
   // Popular select de seção — usa defaults se adminState.homeSections estiver vazio
   const secSelect = document.getElementById('courseSectionKey');
   if (secSelect) {
@@ -644,8 +650,10 @@ async function saveCourse() {
     thumb: getVal('courseThumbUrl'),
     hero: getVal('courseHeroUrl'),
     tags: getVal('courseTags').split(',').map(t => t.trim()).filter(Boolean),
-    watchUrl: getVal('courseWatchUrl').trim(),
-    details: getVal('courseDetails').trim(),
+    watchUrl:  getVal('courseWatchUrl').trim(),
+    details:   getVal('courseDetails').trim(),
+    modules:   getModulesData(),
+    materials: getMaterialsData(),
     progress: 0,
   };
 
@@ -704,6 +712,175 @@ async function saveCourse() {
   renderCoursesTable();
   initDashboard();
 }
+
+// ================================================================
+//  MODULES & LESSONS BUILDER
+// ================================================================
+
+function renderModulesBuilder(modules) {
+  editingModules = modules ? JSON.parse(JSON.stringify(modules)) : [];
+  const container = document.getElementById('modulesBuilder');
+  if (!container) return;
+  container.innerHTML = '';
+  editingModules.forEach((mod, mi) => _appendModuleBlock(container, mod, mi));
+}
+
+function _appendModuleBlock(container, mod, mi) {
+  const block = document.createElement('div');
+  block.className = 'module-block';
+  block.dataset.moduleIdx = mi;
+  const lessons = (mod.lessons || []).map((l, li) => _lessonRowHTML(mi, li, l)).join('');
+  block.innerHTML = `
+    <div class="module-block-header">
+      <i class="fas fa-grip-vertical" style="color:var(--gray2);margin-right:4px"></i>
+      <input type="text" class="form-input module-title-input" value="${escapeHtml(mod.title || '')}"
+        placeholder="Ex: MÓDULO 1: FUNDAMENTOS" style="flex:1;font-size:0.83rem;font-weight:600;padding:6px 10px" />
+      <button type="button" class="btn-icon-sm" onclick="addLesson(${mi})"><i class="fas fa-plus"></i> Aula</button>
+      <button type="button" class="btn-icon-sm btn-danger-sm" onclick="removeModule(${mi})"><i class="fas fa-trash"></i></button>
+    </div>
+    <div class="lessons-list">${lessons}</div>
+  `;
+  container.appendChild(block);
+}
+
+function _lessonRowHTML(mi, li, lesson) {
+  return `
+    <div class="lesson-row" data-lesson-idx="${li}">
+      <span class="lesson-num">${li + 1}</span>
+      <input type="text" class="form-input lesson-title-input" value="${escapeHtml(lesson.title || '')}"
+        placeholder="Título da aula" style="flex:2;font-size:0.78rem;padding:5px 8px" />
+      <input type="text" class="form-input lesson-duration-input" value="${escapeHtml(lesson.duration || '')}"
+        placeholder="00:00" style="width:72px;font-size:0.78rem;padding:5px 8px;text-align:center" />
+      <input type="text" class="form-input lesson-url-input" value="${escapeHtml(lesson.url || '')}"
+        placeholder="YouTube URL" style="flex:3;font-size:0.78rem;padding:5px 8px" />
+      <button type="button" class="btn-icon-sm btn-danger-sm" onclick="removeLesson(${mi},${li})"><i class="fas fa-times"></i></button>
+    </div>
+  `;
+}
+
+function _rebuildModulesDOM() {
+  const container = document.getElementById('modulesBuilder');
+  if (!container) return;
+  container.innerHTML = '';
+  editingModules.forEach((mod, mi) => _appendModuleBlock(container, mod, mi));
+}
+
+function _syncModulesFromDOM() {
+  const container = document.getElementById('modulesBuilder');
+  if (!container) return;
+  container.querySelectorAll('.module-block').forEach((block, mi) => {
+    if (!editingModules[mi]) editingModules[mi] = { title: '', lessons: [] };
+    editingModules[mi].title = block.querySelector('.module-title-input')?.value.trim() || '';
+    const lessons = [];
+    block.querySelectorAll('.lesson-row').forEach(row => {
+      const title    = row.querySelector('.lesson-title-input')?.value.trim()    || '';
+      const duration = row.querySelector('.lesson-duration-input')?.value.trim() || '';
+      const url      = row.querySelector('.lesson-url-input')?.value.trim()      || '';
+      if (title || url) lessons.push({ title, duration, url });
+    });
+    editingModules[mi].lessons = lessons;
+  });
+}
+
+function addModule() {
+  _syncModulesFromDOM();
+  editingModules.push({ title: '', lessons: [] });
+  _rebuildModulesDOM();
+  // Focus new module title
+  const blocks = document.querySelectorAll('#modulesBuilder .module-block');
+  blocks[blocks.length - 1]?.querySelector('.module-title-input')?.focus();
+}
+
+function removeModule(mi) {
+  _syncModulesFromDOM();
+  editingModules.splice(mi, 1);
+  _rebuildModulesDOM();
+}
+
+function addLesson(mi) {
+  _syncModulesFromDOM();
+  if (!editingModules[mi]) return;
+  if (!editingModules[mi].lessons) editingModules[mi].lessons = [];
+  editingModules[mi].lessons.push({ title: '', duration: '', url: '' });
+  _rebuildModulesDOM();
+  // Focus new lesson title
+  const block = document.querySelector(`#modulesBuilder .module-block[data-module-idx="${mi}"]`);
+  const rows = block?.querySelectorAll('.lesson-row');
+  rows?.[rows.length - 1]?.querySelector('.lesson-title-input')?.focus();
+}
+
+function removeLesson(mi, li) {
+  _syncModulesFromDOM();
+  editingModules[mi]?.lessons?.splice(li, 1);
+  _rebuildModulesDOM();
+}
+
+function getModulesData() {
+  _syncModulesFromDOM();
+  return editingModules.filter(m => m.title || m.lessons?.length);
+}
+
+// ================================================================
+//  MATERIALS BUILDER
+// ================================================================
+
+function renderMaterialsBuilder(materials) {
+  editingMaterials = materials ? JSON.parse(JSON.stringify(materials)) : [];
+  _rebuildMaterialsDOM();
+}
+
+function _rebuildMaterialsDOM() {
+  const container = document.getElementById('materialsBuilder');
+  if (!container) return;
+  const typeOpts = ['pdf','ppt','xls','video','link','zip','other']
+    .map(t => `<option value="${t}">${t.toUpperCase()}</option>`).join('');
+  container.innerHTML = editingMaterials.map((mat, i) => `
+    <div class="material-row" data-mat-idx="${i}">
+      <select class="form-select material-type-select" style="width:82px;font-size:0.78rem;padding:5px 6px">
+        ${['pdf','ppt','xls','video','link','zip','other'].map(t =>
+          `<option value="${t}"${mat.type === t ? ' selected' : ''}>${t.toUpperCase()}</option>`
+        ).join('')}
+      </select>
+      <input type="text" class="form-input material-name-input" value="${escapeHtml(mat.name || '')}"
+        placeholder="Nome do material" style="flex:2;font-size:0.78rem;padding:5px 8px" />
+      <input type="text" class="form-input material-url-input" value="${escapeHtml(mat.url || '')}"
+        placeholder="URL do arquivo ou link" style="flex:3;font-size:0.78rem;padding:5px 8px" />
+      <button type="button" class="btn-icon-sm btn-danger-sm" onclick="removeMaterial(${i})"><i class="fas fa-times"></i></button>
+    </div>
+  `).join('');
+}
+
+function _syncMaterialsFromDOM() {
+  const container = document.getElementById('materialsBuilder');
+  if (!container) return;
+  container.querySelectorAll('.material-row').forEach((row, i) => {
+    if (!editingMaterials[i]) editingMaterials[i] = {};
+    editingMaterials[i].type = row.querySelector('.material-type-select')?.value || 'pdf';
+    editingMaterials[i].name = row.querySelector('.material-name-input')?.value.trim() || '';
+    editingMaterials[i].url  = row.querySelector('.material-url-input')?.value.trim()  || '';
+  });
+}
+
+function addMaterial() {
+  _syncMaterialsFromDOM();
+  editingMaterials.push({ type: 'pdf', name: '', url: '' });
+  _rebuildMaterialsDOM();
+  const rows = document.querySelectorAll('#materialsBuilder .material-row');
+  rows[rows.length - 1]?.querySelector('.material-name-input')?.focus();
+}
+
+function removeMaterial(i) {
+  _syncMaterialsFromDOM();
+  editingMaterials.splice(i, 1);
+  _rebuildMaterialsDOM();
+}
+
+function getMaterialsData() {
+  _syncMaterialsFromDOM();
+  return editingMaterials.filter(m => m.name || m.url);
+}
+
+// ================================================================
 
 async function deleteCourse(id) {
   if (!confirm('Tem certeza que deseja excluir este curso?')) return;
