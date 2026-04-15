@@ -14,7 +14,7 @@
   <!-- NAVBAR -->
   <nav class="navbar scrolled" id="navbar">
     <div class="navbar-left">
-      <a href="index.html" class="logo">VGR<span>ACADEMY</span></a>
+      <a href="/" class="logo">VGR<span>ACADEMY</span></a>
     </div>
     <div class="navbar-right">
       <a href="login.html" class="btn-secondary btn-sm">Entrar</a>
@@ -246,6 +246,7 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/db.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-db.js"></script>
@@ -255,21 +256,21 @@
       if (!url) return;
       const vid = document.getElementById('landingHeroVideo');
       const img = document.getElementById('landingHeroImg');
+      const isExternal = /^https?:\/\//i.test(url);
 
-      if (type === 'video' && vid) {
-        // Usa o elemento <video> já no HTML — Android respeita autoplay nativo
+      if (type === 'video' && isExternal && vid) {
         if (poster) vid.poster = poster;
         vid.src = url;
-        vid.muted = true; // propriedade JS obrigatória além do atributo HTML
-        vid.style.display = '';
+        vid.muted = true;
+        vid.style.display = 'block';
         if (img) img.style.display = 'none';
+        const fallback = () => { vid.style.display = 'none'; if (img && poster) { img.src = poster; img.style.display = ''; } };
+        vid.addEventListener('error', fallback, { once: true });
         vid.load();
-        vid.play().catch(() => {
-          // Fallback: espera o vídeo estar pronto para tocar
-          vid.addEventListener('canplaythrough', () => vid.play().catch(() => {}), { once: true });
-        });
+        vid.play().catch(() => vid.addEventListener('canplaythrough', () => vid.play().catch(fallback), { once: true }));
       } else if (img) {
-        img.src = url;
+        // URL local ou tipo imagem — mostra poster/imagem
+        img.src = (type !== 'video' ? url : null) || poster || img.src;
         img.style.display = '';
         if (vid) vid.style.display = 'none';
       }
@@ -307,18 +308,42 @@
       });
     });
 
-    // Quick register from landing
-    function quickRegister(e) {
+    // Quick register from landing — usa Supabase Auth
+    async function quickRegister(e) {
       e.preventDefault();
+      const btn   = e.target.querySelector('button[type="submit"]');
       const name  = document.getElementById('qrName').value.trim();
       const email = document.getElementById('qrEmail').value.trim();
       const pass  = document.getElementById('qrPass').value;
-      const result = DB.registerUser(name, email, pass, 'free');
-      if (result.success) {
-        DB.login(email, pass);
-        window.location.href = 'home.html';
-      } else {
-        alert(result.error || 'Erro ao criar conta. Tente novamente.');
+
+      if (!name || name.length < 2) { alert('Informe seu nome completo.'); return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('E-mail inválido.'); return; }
+      if (pass.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
+
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...'; }
+
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email, password: pass, options: { data: { name } }
+        });
+        if (error) {
+          const msg = error.message?.includes('already registered') ? 'Este e-mail já está cadastrado.' : 'Erro ao criar conta. Tente novamente.';
+          alert(msg);
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rocket"></i> Criar conta grátis'; }
+          return;
+        }
+        // Garante criação do perfil mesmo sem trigger
+        if (data.user && data.session) {
+          const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e50914&color=fff&size=80`;
+          await supabaseClient.from('profiles').upsert({ id: data.user.id, name, avatar, plan: 'free' });
+          window.location.href = 'home.html';
+        } else {
+          alert('Conta criada! Verifique seu e-mail para confirmar o cadastro e depois faça login.');
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Verifique o e-mail'; }
+        }
+      } catch(err) {
+        alert('Erro inesperado. Tente novamente.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rocket"></i> Criar conta grátis'; }
       }
     }
   </script>

@@ -83,24 +83,33 @@ function applyAdminState(overrideState) {
     // Reutiliza elementos nativos do HTML (necessário para autoplay no Android)
     const vid = document.getElementById('heroBgVideo');
     const img = document.getElementById('heroBgImg');
-    if (hero.type === 'video') {
+    // Só usa vídeo se a URL for externa (http/https) — URLs locais/relativas não funcionam no Vercel
+    const isExternalUrl = u => typeof u === 'string' && /^https?:\/\//i.test(u);
+    const _fallbackToPoster = () => {
+      if (vid) vid.style.display = 'none';
+      if (img && hero.poster) { img.className = 'hero-img'; img.src = hero.poster; img.style.display = 'block'; }
+    };
+
+    if (hero.type === 'video' && isExternalUrl(hero.url)) {
       if (img) img.style.display = 'none';
       if (vid) {
         vid.className = 'hero-video';
         vid.style.display = 'block';
         if (hero.poster) vid.poster = hero.poster;
-        vid.src = hero.url || '';
+        vid.src = hero.url;
         vid.muted = true;
-        const _tryPlay = () => vid.play().catch(() => {});
+        // Se o vídeo falhar (404, CORS, etc.), cai para o poster
+        vid.addEventListener('error', _fallbackToPoster, { once: true });
+        const _tryPlay = () => vid.play().catch(_fallbackToPoster);
         vid.addEventListener('canplay', _tryPlay, { once: true });
         vid.load();
-        _tryPlay();
       }
     } else {
+      // URL local/relativa ou tipo imagem — mostra poster/imagem
       if (vid) vid.style.display = 'none';
       if (img) {
         img.className = 'hero-img';
-        img.src = hero.url || hero.poster || '';
+        img.src = (hero.type === 'image' ? hero.url : null) || hero.poster || '';
         img.alt = 'Hero';
         img.style.display = 'block';
       }
@@ -228,10 +237,11 @@ applyAdminState();
         const _vid = document.getElementById('heroBgVideo');
         const _img = document.getElementById('heroBgImg');
         if (h.url) {
+          const _isExt = u => typeof u === 'string' && /^https?:\/\//i.test(u);
           if (h.type === 'image') {
             if (_vid) _vid.style.display = 'none';
             if (_img) { _img.className = 'hero-img'; _img.src = h.url; _img.style.display = 'block'; }
-          } else {
+          } else if (_isExt(h.url)) {
             if (_img) _img.style.display = 'none';
             if (_vid) {
               _vid.className = 'hero-video';
@@ -239,11 +249,19 @@ applyAdminState();
               if (h.poster) _vid.poster = h.poster;
               _vid.src = h.url;
               _vid.muted = true;
-              const _tp = () => _vid.play().catch(() => {});
+              const _fallback = () => {
+                _vid.style.display = 'none';
+                if (_img && h.poster) { _img.className = 'hero-img'; _img.src = h.poster; _img.style.display = 'block'; }
+              };
+              _vid.addEventListener('error', _fallback, { once: true });
+              const _tp = () => _vid.play().catch(_fallback);
               _vid.addEventListener('canplay', _tp, { once: true });
               _vid.load();
-              _tp();
             }
+          } else {
+            // URL local — mostra poster como fallback
+            if (_vid) _vid.style.display = 'none';
+            if (_img && h.poster) { _img.className = 'hero-img'; _img.src = h.poster; _img.style.display = 'block'; }
           }
         }
       } catch(_e) {
