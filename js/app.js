@@ -1203,3 +1203,22 @@ document.addEventListener('click', async (e) => {
     window.location.href = 'login.html';
   }
 });
+
+// ---- Toggle dropdown do perfil por clique (funciona em mobile e desktop) ----
+(function () {
+  const avatarBtn = document.getElementById('avatarBtn');
+  const dropdown  = document.getElementById('dropdown');
+  if (!avatarBtn || !dropdown) return;
+
+  avatarBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.contains('dropdown-open');
+    dropdown.classList.toggle('dropdown-open', !isOpen);
+  });
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', () => dropdown.classList.remove('dropdown-open'));
+
+  // Não fecha ao clicar dentro do dropdown
+  dropdown.addEventListener('click', (e) => e.stopPropagation());
+})();

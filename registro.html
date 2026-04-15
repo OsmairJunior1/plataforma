@@ -140,7 +140,16 @@
           return;
         }
 
-        // Sem confirmação de e-mail — já logado
+        // Sem confirmação de e-mail — já logado; garante criação do perfil
+        if (data.user && data.session) {
+          const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e50914&color=fff&size=80`;
+          await supabaseClient
+            .from('profiles')
+            .upsert({ id: data.user.id, name, avatar, plan: 'free' })
+            .select()
+            .single();
+        }
+
         if (txt) txt.innerHTML = '<i class="fas fa-check" style="margin-right:8px"></i>Conta criada!';
         showMessage('Conta criada com sucesso! Redirecionando...', 'success');
         setTimeout(() => { window.location.href = 'home.html'; }, 1500);

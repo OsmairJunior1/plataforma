@@ -27,16 +27,31 @@
     }
 
     // Buscar perfil do usuário no banco
-    const { data: profile, error: profileError } = await supabaseClient
+    let { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
-    if (profileError || !profile) {
-      // Perfil não encontrado — deslogar e redirecionar
-      await supabaseClient.auth.signOut();
-      window.location.href = 'login.html';
+    // Perfil não existe (trigger não rodou ou novo usuário) → cria agora
+    if (profileError?.code === 'PGRST116' || (!profile && !profileError)) {
+      const userName = session.user.user_metadata?.name
+                    || session.user.email.split('@')[0];
+      const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=e50914&color=fff&size=80`;
+
+      const { data: newProfile } = await supabaseClient
+        .from('profiles')
+        .insert({ id: session.user.id, name: userName, avatar, plan: 'free' })
+        .select('*')
+        .single();
+
+      profile = newProfile;
+    }
+
+    // Erro real (ex: permissão) — mas não deslogamos; tentamos continuar sem perfil
+    if (!profile) {
+      console.warn('[auth] Perfil não disponível, continuando sem dados de perfil.');
+      document.body.style.visibility = 'visible';
       return;
     }
 
@@ -61,6 +76,9 @@
 
     window.SUPABASE_SESSION = session;
 
+    // Atualiza avatar e nome do usuário na navbar
+    _updateNavUser(profile);
+
     // Sinalizar que auth está pronta para scripts dependentes
     document.dispatchEvent(new CustomEvent('vgr:auth-ready', { detail: window.CURRENT_USER }));
 
@@ -74,3 +92,14 @@
 
   document.body.style.visibility = 'visible';
 })();
+
+/** Atualiza avatar e nome na navbar com os dados reais do usuário. */
+function _updateNavUser(profile) {
+  // Avatar
+  const avatarImg = document.querySelector('.user-menu .avatar img');
+  if (avatarImg && profile.avatar) avatarImg.src = profile.avatar;
+
+  // Nome exibido ao lado do avatar (se existir o span)
+  const nameSpan = document.querySelector('.user-menu .avatar .user-display-name');
+  if (nameSpan) nameSpan.textContent = (profile.name || '').split(' ')[0];
+}
