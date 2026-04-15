@@ -450,6 +450,24 @@ function populateCarousel(id, courses, opts = {}) {
   });
 }
 
+/* ---- WATCH HISTORY helpers ---- */
+function getWatchHistory() {
+  try { return JSON.parse(localStorage.getItem('vgr_history') || '[]'); } catch(_) { return []; }
+}
+
+function calcCourseProgress(courseId, course) {
+  // Calcula % de aulas concluídas para um curso
+  const modules = course?.modules || [];
+  let total = modules.reduce((acc, m) => acc + (m.lessons || []).length, 0);
+  if (total === 0 && course?.watchUrl) total = 1; // curso de 1 vídeo
+  if (!total) return 0;
+  let done = 0;
+  for (let i = 0; i < total; i++) {
+    if (localStorage.getItem(`vgr_done_${courseId}_${i}`) === '1') done++;
+  }
+  return Math.round((done / total) * 100);
+}
+
 /* ---- CREATE POSTER CARD (2:3 portrait, cinema style) ---- */
 function createPosterCard(course, opts = {}) {
   const { showRank = false, index = 0 } = opts;
@@ -470,6 +488,10 @@ function createPosterCard(course, opts = {}) {
       <span>PREMIUM</span>
     </div>` : '';
   const inList = MY_LIST.includes(course.id);
+  const progress = course._progress != null ? course._progress : 0;
+  const progressHTML = progress > 0
+    ? `<div class="poster-progress-bar"><div class="poster-progress-fill" style="width:${progress}%"></div></div>`
+    : '';
 
   card.innerHTML = `
     <div class="poster-thumb">
@@ -488,6 +510,7 @@ function createPosterCard(course, opts = {}) {
       ${badgeHTML}
       ${rankHTML}
       ${lockHTML}
+      ${progressHTML}
       <div class="poster-actions">
         ${isLocked
           ? `<button class="pa-btn pa-btn-play" data-action="upgrade" title="Premium"><i class="fas fa-crown"></i></button>`
@@ -582,12 +605,20 @@ function renderCarousels() {
     return sec.courseIds.map(id => COURSES.find(c => String(c.id) === String(id))).filter(Boolean);
   };
 
-  // "Continuar Assistindo" — só mostra se o usuário tem progresso real
-  const inProgress = pinnedFor('continue') || free.filter(c => {
-    const p = userProgress[c.id];
-    return p && p.percent > 0 && p.percent < 100;
-  });
-  populatePosterCarousel('continueRow', inProgress);
+  // "Continuar Assistindo" — lê histórico de reprodução do localStorage
+  const continueWatching = pinnedFor('continue') || (() => {
+    const history = getWatchHistory();
+    return history
+      .map(h => {
+        const c = courses.find(x => String(x.id) === String(h.id));
+        if (!c) return null;
+        const pct = calcCourseProgress(h.id, c);
+        if (pct >= 100) return null; // curso totalmente concluído — não exibe
+        return { ...c, _progress: pct };
+      })
+      .filter(Boolean);
+  })();
+  populatePosterCarousel('continueRow', continueWatching);
 
   const popular = pinnedFor('popular') || [...free].sort((a, b) => b.rating - a.rating).slice(0, 10);
   populatePosterCarousel('popularRow', popular);
