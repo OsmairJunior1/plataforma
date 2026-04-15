@@ -549,7 +549,21 @@ ALTER TABLE platform_settings
 -- Módulos, aulas e materiais por curso
 ALTER TABLE courses
   ADD COLUMN IF NOT EXISTS modules   JSONB DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS materials JSONB DEFAULT '[]'::jsonb;</pre>
+  ADD COLUMN IF NOT EXISTS materials JSONB DEFAULT '[]'::jsonb;
+
+-- Comentários dos cursos (compartilhados entre alunos)
+CREATE TABLE IF NOT EXISTS course_comments (
+  id           bigserial PRIMARY KEY,
+  course_id    bigint NOT NULL,
+  user_name    text NOT NULL DEFAULT 'Usuário',
+  user_avatar  text DEFAULT '',
+  content      text NOT NULL,
+  created_at   timestamptz DEFAULT now()
+);
+ALTER TABLE course_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "comments_select" ON course_comments FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "comments_insert" ON course_comments FOR INSERT WITH CHECK (true);
+CREATE POLICY IF NOT EXISTS "comments_delete" ON course_comments FOR DELETE USING (true);</pre>
               <button onclick="navigator.clipboard.writeText(document.getElementById('migrationSQL').textContent).then(()=>showToast('SQL copiado!','success'))"
                 style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.72rem">
                 <i class="fas fa-copy"></i> Copiar

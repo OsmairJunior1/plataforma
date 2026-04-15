@@ -179,8 +179,14 @@
       <div class="player-info" id="playerInfo">
         <h1 class="player-course-title" id="courseTitleEl">Carregando...</h1>
         <p class="player-lesson-title" id="lessonTitleEl">Selecione uma aula</p>
-        <div class="player-meta-row" id="playerMetaRow">
-          <!-- populated dynamically -->
+
+        <!-- Meta + Concluído -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+          <div class="player-meta-row" id="playerMetaRow" style="margin-bottom:0"></div>
+          <button id="btnCompleted" onclick="toggleCompleted()"
+            style="display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.6);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap">
+            <i class="fas fa-circle-check"></i> Marcar como concluído
+          </button>
         </div>
 
         <div class="player-tabs">
@@ -191,7 +197,7 @@
         </div>
 
         <div id="tab-desc" class="player-tab-content active">
-          <p id="courseDescText" style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.7">
+          <p id="courseDescText" style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.7;white-space:pre-line">
             Carregando descrição...
           </p>
         </div>
@@ -203,16 +209,21 @@
         </div>
 
         <div id="tab-comments" class="player-tab-content">
-          <div class="comment-input-row">
-            <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="Você" style="border-radius:50%;width:36px;height:36px" />
+          <!-- Input -->
+          <div class="comment-input-row" id="commentInputRow">
+            <img id="commentAvatar" src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="Você" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
             <input type="text" class="comment-input" placeholder="Deixe sua dúvida ou comentário..." id="commentInput" />
             <button class="btn-primary btn-sm" onclick="postComment()">Enviar</button>
           </div>
-          <div id="commentsList"></div>
+          <!-- List (shared between all users, loaded from Supabase) -->
+          <div id="commentsList">
+            <p style="font-size:0.85rem;color:var(--gray);text-align:center;padding:20px 0">Carregando comentários...</p>
+          </div>
         </div>
 
         <div id="tab-notes" class="player-tab-content">
-          <textarea id="notesArea" placeholder="Escreva suas anotações aqui. Elas ficam salvas automaticamente..." style="width:100%;min-height:150px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:14px;color:white;font-family:var(--font);font-size:0.9rem;outline:none;resize:vertical;line-height:1.6"></textarea>
+          <p style="font-size:0.78rem;color:var(--gray);margin-bottom:10px"><i class="fas fa-lock" style="color:var(--red);margin-right:5px"></i>Suas anotações são privadas — somente você as vê.</p>
+          <textarea id="notesArea" placeholder="Escreva suas anotações aqui. Elas ficam salvas automaticamente..." style="width:100%;min-height:200px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:14px;color:white;font-family:var(--font);font-size:0.9rem;outline:none;resize:vertical;line-height:1.6"></textarea>
           <button class="btn-primary btn-sm" style="margin-top:10px" onclick="saveNotes()"><i class="fas fa-save"></i> Salvar Notas</button>
         </div>
       </div>
@@ -422,6 +433,90 @@
     }).join('');
   }
 
+  // ---------- Completed toggle ----------
+  function completedKey() { return `vgr_completed_${currentCourse?.id}`; }
+
+  function updateCompletedBtn() {
+    const btn = document.getElementById('btnCompleted');
+    if (!btn || !currentCourse) return;
+    const done = localStorage.getItem(completedKey()) === '1';
+    btn.style.borderColor  = done ? '#00c853'                  : 'rgba(255,255,255,0.2)';
+    btn.style.background   = done ? 'rgba(0,200,83,0.12)'      : 'transparent';
+    btn.style.color        = done ? '#00c853'                  : 'rgba(255,255,255,0.6)';
+    btn.innerHTML = done
+      ? '<i class="fas fa-circle-check"></i> Concluído ✓'
+      : '<i class="fas fa-circle-check"></i> Marcar como concluído';
+  }
+
+  function toggleCompleted() {
+    const done = localStorage.getItem(completedKey()) === '1';
+    localStorage.setItem(completedKey(), done ? '0' : '1');
+    updateCompletedBtn();
+    if (typeof showToast === 'function')
+      showToast(done ? 'Marcação removida.' : '🎉 Curso marcado como concluído!', done ? '' : 'success');
+  }
+
+  // ---------- Comments (Supabase — shared between all users) ----------
+  let isAdmin = false;
+
+  async function loadComments() {
+    const list = document.getElementById('commentsList');
+    if (!list || !currentCourse) return;
+    list.innerHTML = '<p style="font-size:0.85rem;color:var(--gray);text-align:center;padding:20px 0">Carregando...</p>';
+    const comments = await SupabaseDB.getComments(currentCourse.id);
+    renderComments(comments);
+  }
+
+  function renderComments(comments) {
+    const list = document.getElementById('commentsList');
+    if (!list) return;
+    if (!comments.length) {
+      list.innerHTML = '<p style="font-size:0.85rem;color:var(--gray);text-align:center;padding:24px 0">Nenhum comentário ainda. Seja o primeiro!</p>';
+      return;
+    }
+    list.innerHTML = comments.map(c => {
+      const initials = (c.user_name || 'U').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      const avatar = c.user_avatar
+        ? `<img src="${escapeHtml(c.user_avatar)}" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0;object-fit:cover" />`
+        : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name || 'U')}&background=444&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />`;
+      const timeAgo = formatTimeAgo(c.created_at);
+      const deleteBtn = isAdmin
+        ? `<button onclick="deleteComment(${c.id})" style="font-size:0.72rem;color:rgba(229,9,20,0.6);background:none;border:none;cursor:pointer;margin-left:8px" title="Excluir comentário"><i class="fas fa-trash"></i></button>`
+        : '';
+      return `
+        <div class="comment" data-comment-id="${c.id}">
+          ${avatar}
+          <div class="comment-body">
+            <div class="comment-meta">
+              <strong>${escapeHtml(c.user_name || 'Usuário')}</strong>
+              <span>${timeAgo}</span>
+              ${deleteBtn}
+            </div>
+            <p>${escapeHtml(c.content)}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function deleteComment(commentId) {
+    if (!confirm('Excluir este comentário?')) return;
+    const ok = await SupabaseDB.deleteComment(commentId);
+    if (ok) {
+      document.querySelector(`.comment[data-comment-id="${commentId}"]`)?.remove();
+      if (typeof showToast === 'function') showToast('Comentário excluído.', 'success');
+    }
+  }
+
+  function formatTimeAgo(isoDate) {
+    if (!isoDate) return '';
+    const diff = Math.floor((Date.now() - new Date(isoDate)) / 1000);
+    if (diff < 60)   return 'agora';
+    if (diff < 3600) return `há ${Math.floor(diff/60)} min`;
+    if (diff < 86400) return `há ${Math.floor(diff/3600)}h`;
+    return `há ${Math.floor(diff/86400)} dia${Math.floor(diff/86400) > 1 ? 's' : ''}`;
+  }
+
   // ---------- Render full player ----------
   function renderPlayer(course) {
     currentCourse = course;
@@ -441,16 +536,12 @@
       `;
     }
 
+    // Completed button
+    updateCompletedBtn();
+
     // Description
     const descEl = document.getElementById('courseDescText');
-    if (descEl) {
-      if (course.details || course.desc) {
-        descEl.textContent = course.details || course.desc || '';
-        descEl.style.whiteSpace = 'pre-line';
-      } else {
-        descEl.textContent = 'Sem descrição disponível.';
-      }
-    }
+    if (descEl) descEl.textContent = course.details || course.desc || 'Sem descrição disponível.';
 
     // Sidebar header
     const totalLessons = (course.modules || []).reduce((s, m) => s + (m.lessons?.length || 0), 0) || (course.watchUrl ? 1 : 0);
@@ -473,7 +564,6 @@
     if ((course.modules || []).length === 0 && course.watchUrl) {
       loadLesson(0);
     } else if (allLessons.length > 0) {
-      // Show placeholder with first lesson's thumbnail
       const firstUrl = allLessons[0]?.lesson?.url;
       if (firstUrl) {
         const yt = youtubeThumbnail(firstUrl);
@@ -481,12 +571,21 @@
         document.getElementById('placeholderLabel').textContent = 'Clique numa aula para reproduzir';
       }
     }
+
+    // Load comments
+    loadComments();
   }
 
   // ---------- Init ----------
   async function initPlayer() {
-    const params = new URLSearchParams(window.location.search);
+    const params  = new URLSearchParams(window.location.search);
     const courseId = params.get('id');
+
+    // Detect if user is admin
+    try {
+      const saved = localStorage.getItem('vgracademy_admin');
+      if (saved) isAdmin = true; // simplistic check — enough for delete button
+    } catch(_) {}
 
     // Try COURSES array (may already be loaded by app.js)
     let course = window.COURSES?.find(c => String(c.id) === String(courseId));
@@ -495,16 +594,9 @@
     if (!course && courseId && window.supabaseClient) {
       try {
         const { data, error } = await supabaseClient
-          .from('courses')
-          .select('*')
-          .eq('id', courseId)
-          .single();
-        if (!error && data && window.SupabaseDB) {
-          course = SupabaseDB.courseToLocal(data);
-        }
-      } catch (e) {
-        console.warn('[player] Supabase fetch:', e.message);
-      }
+          .from('courses').select('*').eq('id', courseId).single();
+        if (!error && data && window.SupabaseDB) course = SupabaseDB.courseToLocal(data);
+      } catch (e) { console.warn('[player] fetch:', e.message); }
     }
 
     if (!course) {
@@ -519,7 +611,6 @@
 
   // Run init when DOM + scripts are ready
   document.addEventListener('DOMContentLoaded', () => {
-    // Controls
     document.getElementById('vcPrev')?.addEventListener('click', prevLesson);
     document.getElementById('vcNext')?.addEventListener('click', nextLesson);
     document.getElementById('vcFullscreen')?.addEventListener('click', () => {
@@ -528,7 +619,7 @@
       else document.exitFullscreen();
     });
 
-    // Tabs
+    // Tabs — load comments when switching to that tab
     document.querySelectorAll('.player-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.player-tab').forEach(b => b.classList.remove('active'));
@@ -558,24 +649,41 @@
     }
   }
 
-  // Comments
-  function postComment() {
+  // Comments — post to Supabase
+  async function postComment() {
     const input = document.getElementById('commentInput');
-    if (!input?.value.trim()) return;
-    const list = document.getElementById('commentsList');
-    const div = document.createElement('div');
-    div.className = 'comment';
-    div.innerHTML = `
-      <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
-      <div class="comment-body">
-        <div class="comment-meta"><strong>Você</strong> <span>agora</span></div>
-        <p>${escapeHtml(input.value.trim())}</p>
-        <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 0 curtidas · Responder</button>
-      </div>
-    `;
-    list?.prepend(div);
+    const text = input?.value.trim();
+    if (!text) return;
+
+    // Get user name from auth/profile or use default
+    const user = window.CURRENT_USER;
+    const userName   = user?.name   || user?.email?.split('@')[0] || 'Aluno';
+    const userAvatar = user?.avatar || '';
+
     input.value = '';
-    if (typeof showToast === 'function') showToast('Comentário enviado!');
+    input.disabled = true;
+
+    const saved = await SupabaseDB.addComment(currentCourse.id, text, userName, userAvatar);
+    input.disabled = false;
+
+    if (saved) {
+      // Re-render comments
+      loadComments();
+      if (typeof showToast === 'function') showToast('Comentário enviado!', 'success');
+    } else {
+      // Fallback: show locally
+      const list = document.getElementById('commentsList');
+      const div = document.createElement('div');
+      div.className = 'comment';
+      div.innerHTML = `
+        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=e50914&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
+        <div class="comment-body">
+          <div class="comment-meta"><strong>${escapeHtml(userName)}</strong> <span>agora</span></div>
+          <p>${escapeHtml(text)}</p>
+        </div>
+      `;
+      list?.prepend(div);
+    }
   }
 
   // escapeHtml helper (in case app.js not loaded yet)
