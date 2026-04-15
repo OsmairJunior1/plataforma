@@ -138,8 +138,7 @@ function applyAdminState(overrideState) {
         watchBtn.style.cursor = 'pointer';
         watchBtn.onclick = (e) => {
           e.preventDefault();
-          if (featuredCourse.watchUrl) openVideoPlayer(featuredCourse);
-          else window.location.href = `curso.html?id=${featuredCourse.id}`;
+          window.location.href = `curso.html?id=${featuredCourse.id}`;
         };
       }
     }
@@ -503,7 +502,7 @@ function createPosterCard(course, opts = {}) {
   card.addEventListener('click', (e) => {
     const action = e.target.closest('[data-action]')?.dataset.action;
     if (isLocked) { showToast('🔒 Exclusivo para assinantes Premium.', 'info'); return; }
-    if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
+    if (action === 'play') { window.location.href = `curso.html?id=${course.id}`; }
     else if (action === 'list') { toggleMyList(course.id, card); e.stopPropagation(); }
     else if (action === 'info') { openModal(course); e.stopPropagation(); }
     else if (!e.target.closest('button')) openModal(course);
@@ -671,7 +670,7 @@ function renderTrailSections() {
         const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
         if (!course) return;
         const action = btn.dataset.action;
-        if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
+        if (action === 'play') { window.location.href = `curso.html?id=${course.id}`; }
         else if (action === 'list') toggleMyList(course.id, cardEl);
         else if (action === 'info') openModal(course);
       });
@@ -854,7 +853,7 @@ function renderCustomSections(sections) {
           const course = COURSES.find(c => String(c.id) === cardEl.dataset.id);
           if (!course) return;
           const action = btn.dataset.action;
-          if (action === 'play') { if (course.watchUrl) openVideoPlayer(course); else window.location.href = `curso.html?id=${course.id}`; }
+          if (action === 'play') { window.location.href = `curso.html?id=${course.id}`; }
           else if (action === 'list') toggleMyList(course.id, cardEl);
           else if (action === 'info') openModal(course);
         });
@@ -915,7 +914,7 @@ function openModal(course) {
   const watchBtn = document.getElementById('modalWatch');
   if (watchBtn) {
     watchBtn.removeAttribute('href');
-    watchBtn.onclick = (e) => { e.preventDefault(); closeModal(); openVideoPlayer(course); };
+    watchBtn.onclick = (e) => { e.preventDefault(); closeModal(); window.location.href = `curso.html?id=${course.id}`; };
   }
 
   const tagsEl = document.getElementById('modalTags');
