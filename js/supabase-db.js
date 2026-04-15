@@ -155,6 +155,65 @@ const SupabaseDB = {
     return null;
   },
 
+  // --------------------------------------------------
+  //  COURSE COMMENTS
+  // --------------------------------------------------
+
+  /** Busca comentários de um curso, ordenados do mais recente ao mais antigo. */
+  async getComments(courseId) {
+    if (!this._ok()) return [];
+    try {
+      const { data, error } = await supabaseClient
+        .from('course_comments')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.warn('[SupabaseDB] getComments:', e.message);
+      return [];
+    }
+  },
+
+  /** Salva um novo comentário. */
+  async addComment(courseId, content, userName, userAvatar) {
+    if (!this._ok()) return null;
+    try {
+      const { data, error } = await supabaseClient
+        .from('course_comments')
+        .insert({
+          course_id:   courseId,
+          user_name:   userName   || 'Usuário',
+          user_avatar: userAvatar || '',
+          content:     content,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.warn('[SupabaseDB] addComment:', e.message);
+      return null;
+    }
+  },
+
+  /** Remove um comentário (admin). */
+  async deleteComment(commentId) {
+    if (!this._ok()) return false;
+    try {
+      const { error } = await supabaseClient
+        .from('course_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('[SupabaseDB] deleteComment:', e.message);
+      return false;
+    }
+  },
+
   /** Remove um curso. Requer sessão de admin. */
   async deleteCourse(id) {
     if (!this._ok()) return false;
