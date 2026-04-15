@@ -1214,8 +1214,9 @@ function initDragSort(container) {
     });
   });
 }
-function getDragAfterElement(container, y) {
-  const els = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+function getDragAfterElement(container, y, selector) {
+  const sel = selector || '.sortable-item:not(.dragging)';
+  const els = [...container.querySelectorAll(sel)].filter(el => !el.classList.contains('dragging'));
   return els.reduce((closest, el) => {
     const box = el.getBoundingClientRect();
     const offset = y - box.top - box.height / 2;
@@ -1234,21 +1235,120 @@ function updateFeaturedOrder() {
 
 function buildSectionRow(key, sec) {
   const isCustom = !BUILTIN_SECTION_KEYS.has(key);
+  const wrapper = document.createElement('div');
+  wrapper.dataset.key = key;
+  wrapper.style.cssText = 'display:flex;flex-direction:column;gap:0';
+
   const row = document.createElement('div');
   row.className = 'sortable-item';
   row.dataset.key = key;
   row.draggable = true;
   row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:grab;transition:background 0.2s';
+
+  const courseCount = (sec.courseIds || []).length;
   row.innerHTML = `
     <i class="fas fa-grip-vertical" style="color:var(--gray2);font-size:0.75rem;flex-shrink:0"></i>
     <i class="fas ${escapeHtml(sec.icon || 'fa-layer-group')}" style="color:var(--red);width:16px;text-align:center;flex-shrink:0"></i>
     <span style="flex:1;font-size:0.88rem;font-weight:600">${escapeHtml(sec.title)}</span>
+    ${courseCount > 0 ? `<span style="font-size:0.72rem;color:var(--gray2);background:var(--bg2);border-radius:10px;padding:2px 7px">${courseCount} curso${courseCount !== 1 ? 's' : ''}</span>` : ''}
+    <button class="section-courses-btn" title="Reordenar cursos" style="background:none;border:none;color:var(--gray2);cursor:pointer;padding:4px 6px;border-radius:4px;transition:color 0.15s;font-size:0.82rem" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--gray2)'">
+      <i class="fas fa-list-ol"></i>
+    </button>
     ${isCustom ? `<button class="btn-icon-sm section-delete-btn" data-key="${escapeHtml(key)}" title="Excluir" style="background:none;border:none;color:var(--gray2);cursor:pointer;padding:4px 6px;border-radius:4px;transition:color 0.15s" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--gray2)'"><i class="fas fa-trash-alt" style="font-size:0.78rem"></i></button>` : ''}
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0">
       <input type="checkbox" class="section-toggle" data-key="${escapeHtml(key)}" ${sec.visible ? 'checked' : ''} />
       <span class="toggle-label-text" style="font-size:0.75rem;color:var(--gray2);min-width:42px">${sec.visible ? 'Visível' : 'Oculta'}</span>
     </label>
   `;
+
+  // Painel expansível de cursos
+  const panel = document.createElement('div');
+  panel.className = 'section-courses-panel';
+  panel.style.cssText = 'display:none;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:12px 14px;';
+  panel.dataset.key = key;
+
+  const renderCoursePanel = () => {
+    const courseIds = adminState.homeSections[key]?.courseIds || [];
+    if (courseIds.length === 0) {
+      panel.innerHTML = '<p style="color:var(--gray2);font-size:0.8rem;margin:0">Nenhum curso vinculado a esta seção. Edite um curso e selecione esta seção.</p>';
+      return;
+    }
+    const items = courseIds.map((id, idx) => {
+      const c = (adminState.courses || []).find(x => String(x.id) === String(id));
+      const title = c ? escapeHtml(c.title) : `Curso #${id}`;
+      const thumb = c?.thumb ? `<img src="${escapeHtml(c.thumb)}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;background:var(--bg3);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center"><i class="fas fa-film" style="color:var(--gray2);font-size:0.7rem"></i></div>`;
+      return `
+        <div class="section-course-item" data-id="${escapeHtml(String(id))}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);margin-bottom:6px">
+          <i class="fas fa-grip-vertical" style="color:var(--gray2);font-size:0.72rem;flex-shrink:0;cursor:grab"></i>
+          ${thumb}
+          <span style="flex:1;font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</span>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="sec-course-up" data-idx="${idx}" title="Mover para cima" style="background:var(--bg2);border:1px solid var(--border);color:var(--gray2);cursor:pointer;padding:3px 7px;border-radius:4px;font-size:0.75rem;transition:all 0.15s;${idx === 0 ? 'opacity:0.35;cursor:not-allowed' : ''}" ${idx === 0 ? 'disabled' : ''}>
+              <i class="fas fa-chevron-up"></i>
+            </button>
+            <button class="sec-course-down" data-idx="${idx}" title="Mover para baixo" style="background:var(--bg2);border:1px solid var(--border);color:var(--gray2);cursor:pointer;padding:3px 7px;border-radius:4px;font-size:0.75rem;transition:all 0.15s;${idx === courseIds.length - 1 ? 'opacity:0.35;cursor:not-allowed' : ''}" ${idx === courseIds.length - 1 ? 'disabled' : ''}>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <button class="sec-course-remove" data-id="${escapeHtml(String(id))}" title="Remover desta seção" style="background:none;border:1px solid transparent;color:var(--gray2);cursor:pointer;padding:3px 7px;border-radius:4px;font-size:0.75rem;transition:all 0.15s">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+    panel.innerHTML = `
+      <p style="font-size:0.75rem;color:var(--gray2);margin:0 0 8px;font-weight:600">ORDEM DOS CURSOS <span style="font-weight:400;color:var(--gray2)">— arraste ou use as setas</span></p>
+      <div class="section-course-list">${items}</div>
+    `;
+    // Up/down buttons
+    panel.querySelectorAll('.sec-course-up').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx);
+        const ids = adminState.homeSections[key].courseIds;
+        if (idx <= 0) return;
+        [ids[idx - 1], ids[idx]] = [ids[idx], ids[idx - 1]];
+        renderCoursePanel();
+      });
+    });
+    panel.querySelectorAll('.sec-course-down').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx);
+        const ids = adminState.homeSections[key].courseIds;
+        if (idx >= ids.length - 1) return;
+        [ids[idx], ids[idx + 1]] = [ids[idx + 1], ids[idx]];
+        renderCoursePanel();
+      });
+    });
+    panel.querySelectorAll('.sec-course-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        adminState.homeSections[key].courseIds = (adminState.homeSections[key].courseIds || []).filter(i => String(i) !== String(id));
+        renderCoursePanel();
+        // Atualiza badge de contagem
+        const badge = row.querySelector('span[style*="border-radius:10px"]');
+        const newCount = adminState.homeSections[key].courseIds.length;
+        if (badge) badge.textContent = `${newCount} curso${newCount !== 1 ? 's' : ''}`;
+      });
+    });
+    // Drag-sort dentro do painel
+    const courseList = panel.querySelector('.section-course-list');
+    if (courseList) _initCourseListDrag(courseList, key, renderCoursePanel);
+  };
+
+  row.querySelector('.section-courses-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = panel.style.display !== 'none';
+    if (isOpen) {
+      panel.style.display = 'none';
+      row.style.borderRadius = '8px';
+    } else {
+      renderCoursePanel();
+      panel.style.display = 'block';
+      row.style.borderRadius = '8px 8px 0 0';
+    }
+  });
 
   row.querySelector('.section-toggle').addEventListener('change', (e) => {
     if (!adminState.homeSections[key]) return;
@@ -1260,11 +1360,45 @@ function buildSectionRow(key, sec) {
     row.querySelector('.section-delete-btn')?.addEventListener('click', () => {
       if (!confirm(`Excluir a seção "${sec.title}"?`)) return;
       delete adminState.homeSections[key];
-      row.remove();
+      wrapper.remove();
     });
   }
 
-  return row;
+  wrapper.appendChild(row);
+  wrapper.appendChild(panel);
+  return wrapper;
+}
+
+function _initCourseListDrag(list, key, onReorder) {
+  let draggedItem = null;
+  list.addEventListener('dragstart', (e) => {
+    draggedItem = e.target.closest('.section-course-item');
+    if (draggedItem) setTimeout(() => draggedItem.style.opacity = '0.4', 0);
+  });
+  list.addEventListener('dragend', () => {
+    if (draggedItem) draggedItem.style.opacity = '';
+    draggedItem = null;
+  });
+  list.querySelectorAll('.section-course-item').forEach(item => {
+    item.draggable = true;
+  });
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+    const after = [...list.querySelectorAll('.section-course-item:not([style*="opacity: 0.4"])')].reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = e.clientY - box.top - box.height / 2;
+      return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    if (!after) list.appendChild(draggedItem);
+    else list.insertBefore(draggedItem, after);
+  });
+  list.addEventListener('drop', () => {
+    if (!draggedItem) return;
+    const newOrder = [...list.querySelectorAll('.section-course-item')].map(el => el.dataset.id);
+    adminState.homeSections[key].courseIds = newOrder;
+    onReorder();
+  });
 }
 
 function initSectionsPanel() {
@@ -1277,17 +1411,19 @@ function initSectionsPanel() {
   list.innerHTML = '';
   sorted.forEach(([key, sec]) => list.appendChild(buildSectionRow(key, sec)));
 
-  // Drag-sort
+  // Drag-sort — arrasta o wrapper (pai do .sortable-item)
   let dragged = null;
   list.addEventListener('dragstart', (e) => {
-    dragged = e.target.closest('.sortable-item');
+    const item = e.target.closest('.sortable-item');
+    if (!item) return;
+    dragged = item.parentElement; // wrapper
     setTimeout(() => dragged?.classList.add('dragging'), 0);
   });
-  list.addEventListener('dragend', () => dragged?.classList.remove('dragging'));
+  list.addEventListener('dragend', () => { dragged?.classList.remove('dragging'); dragged = null; });
   list.addEventListener('dragover', (e) => {
     e.preventDefault();
-    const afterEl = getDragAfterElement(list, e.clientY);
     if (!dragged) return;
+    const afterEl = getDragAfterElement(list, e.clientY, '[data-key]');
     if (!afterEl) list.appendChild(dragged);
     else list.insertBefore(dragged, afterEl);
   });
@@ -1297,8 +1433,8 @@ function initSectionsPanel() {
   if (btnSave && !btnSave._bound) {
     btnSave._bound = true;
     btnSave.addEventListener('click', async () => {
-      list.querySelectorAll('.sortable-item').forEach((row, i) => {
-        const key = row.dataset.key;
+      list.querySelectorAll('[data-key]').forEach((wrapper, i) => {
+        const key = wrapper.dataset.key;
         if (adminState.homeSections[key]) adminState.homeSections[key].order = i;
       });
       await saveState();
