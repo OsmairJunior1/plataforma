@@ -1622,6 +1622,26 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
 }
 .poster-card:hover .poster-rank { -webkit-text-stroke-color: rgba(229,9,20,0.55); }
 
+/* ---- progress bar (Continue Watching) ---- */
+.poster-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.18);
+  z-index: 6;
+  border-radius: 0 0 var(--poster-radius) var(--poster-radius);
+  overflow: hidden;
+}
+.poster-progress-fill {
+  height: 100%;
+  background: var(--red);
+  border-radius: 0 0 var(--poster-radius) var(--poster-radius);
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
 /* ---- premium lock ---- */
 .poster-card.card-locked .poster-thumb img { filter: brightness(0.35); }
 .poster-lock {

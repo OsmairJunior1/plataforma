@@ -340,6 +340,14 @@
     if (notesArea) notesArea.value = saved || '';
     notesArea?._noteKey && (notesArea._noteKey = notesKey);
     if (notesArea) notesArea._noteKey = notesKey;
+
+    // ---------- Salva histórico "Continuar Assistindo" ----------
+    try {
+      const hist = JSON.parse(localStorage.getItem('vgr_history') || '[]');
+      const filtered = hist.filter(h => String(h.id) !== String(currentCourse?.id));
+      filtered.unshift({ id: String(currentCourse?.id), lessonIdx: globalIdx, ts: Date.now() });
+      localStorage.setItem('vgr_history', JSON.stringify(filtered.slice(0, 20)));
+    } catch(_) {}
   }
 
   // ---------- Prev / Next ----------
