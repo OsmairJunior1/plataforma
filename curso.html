@@ -8,6 +8,104 @@
   <link rel="stylesheet" href="css/player.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* YouTube iframe fills the video-wrap */
+    .video-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .video-wrap {
+      position: relative;
+      background: #000;
+      aspect-ratio: 16/9;
+    }
+    /* Lesson list in sidebar */
+    .module-section { margin-bottom: 4px; }
+    .module-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--gray);
+      padding: 12px 16px 6px;
+    }
+    .lesson-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .lesson-item:hover { background: rgba(255,255,255,0.05); }
+    .lesson-item.active {
+      background: rgba(229,9,20,0.1);
+      border-left-color: var(--red);
+    }
+    .lesson-item.completed .lesson-num { color: var(--red); }
+    .lesson-num {
+      font-size: 0.8rem;
+      color: var(--gray2);
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .lesson-thumb {
+      width: 60px;
+      height: 34px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg4);
+    }
+    .lesson-info { flex: 1; min-width: 0; }
+    .lesson-title {
+      font-size: 0.8rem;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: rgba(255,255,255,0.85);
+    }
+    .lesson-duration {
+      font-size: 0.7rem;
+      color: var(--gray2);
+      margin-top: 2px;
+    }
+    .lesson-item.active .lesson-title { color: white; font-weight: 600; }
+    .lesson-check {
+      font-size: 0.75rem;
+      color: var(--red);
+      flex-shrink: 0;
+    }
+    /* No-course message */
+    .player-no-course {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
+      gap: 16px;
+      color: var(--gray);
+    }
+    .player-no-course i { font-size: 3rem; color: var(--red); }
+    /* Controls: just prev/next + label */
+    .vc-lesson-label {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.65);
+      margin-left: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+    }
+  </style>
 </head>
 <body class="player-page">
 
@@ -49,32 +147,28 @@
   </div>
 
   <!-- PLAYER LAYOUT -->
-  <div class="player-container">
+  <div class="player-container" id="playerContainer">
 
     <!-- LEFT: VIDEO + INFO -->
     <div class="player-main">
-      <!-- VIDEO -->
-      <div class="video-wrap">
-        <div class="video-placeholder" id="videoPlaceholder">
-          <img src="" alt="Capa" id="videoThumb" />
-          <div class="big-play"><i class="fas fa-play"></i></div>
-          <span class="video-title">Clique para reproduzir</span>
+      <!-- VIDEO AREA -->
+      <div class="video-wrap" id="videoWrap">
+        <!-- Placeholder shown before a lesson is selected -->
+        <div id="videoPlaceholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:2;cursor:pointer">
+          <img id="videoThumb" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.45;display:none" />
+          <div class="big-play" style="font-size:3rem;color:white;z-index:1"><i class="fas fa-play"></i></div>
+          <span id="placeholderLabel" style="margin-top:12px;font-size:0.9rem;color:rgba(255,255,255,0.7);z-index:1">Selecione uma aula para começar</span>
         </div>
-        <!-- Custom Controls Bar -->
-        <div class="video-controls">
-          <div class="vc-progress">
-            <div class="vc-progress-fill" id="vcFill" style="width:0%"></div>
-          </div>
+
+        <!-- Custom Controls Bar (prev/next lesson) -->
+        <div class="video-controls" id="videoControls">
           <div class="vc-row">
             <div class="vc-left">
-              <button class="vc-btn" id="vcPlayPause"><i class="fas fa-play"></i></button>
               <button class="vc-btn" id="vcPrev" title="Aula anterior"><i class="fas fa-backward-step"></i></button>
               <button class="vc-btn" id="vcNext" title="Próxima aula"><i class="fas fa-forward-step"></i></button>
-              <div class="vc-time">0:00 / 0:00</div>
+              <span class="vc-lesson-label" id="vcLessonLabel">—</span>
             </div>
             <div class="vc-right">
-              <button class="vc-btn" title="Velocidade"><i class="fas fa-gauge-high"></i></button>
-              <button class="vc-btn" title="Legenda"><i class="fas fa-closed-captioning"></i></button>
               <button class="vc-btn" id="vcFullscreen" title="Tela cheia"><i class="fas fa-expand"></i></button>
             </div>
           </div>
@@ -82,13 +176,11 @@
       </div>
 
       <!-- INFO TABS -->
-      <div class="player-info">
+      <div class="player-info" id="playerInfo">
         <h1 class="player-course-title" id="courseTitleEl">Carregando...</h1>
         <p class="player-lesson-title" id="lessonTitleEl">Selecione uma aula</p>
-        <div class="player-meta-row">
-          <span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-user" style="color:var(--red);margin-right:4px"></i> Prof. André Lima</span>
-          <span class="badge-level" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;font-size:0.75rem">Iniciante</span>
-          <span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-star" style="color:#ffd700;margin-right:4px"></i> 4.9</span>
+        <div class="player-meta-row" id="playerMetaRow">
+          <!-- populated dynamically -->
         </div>
 
         <div class="player-tabs">
@@ -99,42 +191,14 @@
         </div>
 
         <div id="tab-desc" class="player-tab-content active">
-          <p style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.7">
-            Aprenda as estratégias mais poderosas de marketing digital. Este curso completo cobre desde os fundamentos até técnicas avançadas utilizadas pelos maiores players do mercado.
+          <p id="courseDescText" style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.7">
+            Carregando descrição...
           </p>
-          <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
-              <i class="fas fa-check-circle" style="color:var(--red)"></i> Certificado de conclusão incluso
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
-              <i class="fas fa-check-circle" style="color:var(--red)"></i> Acesso vitalício
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
-              <i class="fas fa-check-circle" style="color:var(--red)"></i> Suporte via comunidade exclusiva
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:rgba(255,255,255,0.7)">
-              <i class="fas fa-check-circle" style="color:var(--red)"></i> Atualizações gratuitas
-            </div>
-          </div>
         </div>
 
         <div id="tab-resources" class="player-tab-content">
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <a href="#" class="resource-item">
-              <i class="fas fa-file-pdf" style="color:#e74c3c"></i>
-              <span>Apostila do Módulo 1 — Fundamentos.pdf</span>
-              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
-            </a>
-            <a href="#" class="resource-item">
-              <i class="fas fa-file-powerpoint" style="color:#e67e22"></i>
-              <span>Slides — Aula 1 ao 4.pptx</span>
-              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
-            </a>
-            <a href="#" class="resource-item">
-              <i class="fas fa-file-excel" style="color:#27ae60"></i>
-              <span>Planilha — Métricas de Marketing.xlsx</span>
-              <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
-            </a>
+          <div id="materialsList" style="display:flex;flex-direction:column;gap:8px">
+            <p style="font-size:0.85rem;color:var(--gray)">Nenhum material disponível para este curso.</p>
           </div>
         </div>
 
@@ -144,24 +208,7 @@
             <input type="text" class="comment-input" placeholder="Deixe sua dúvida ou comentário..." id="commentInput" />
             <button class="btn-primary btn-sm" onclick="postComment()">Enviar</button>
           </div>
-          <div id="commentsList">
-            <div class="comment">
-              <img src="https://ui-avatars.com/api/?name=João+Silva&background=2196f3&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
-              <div class="comment-body">
-                <div class="comment-meta"><strong>João Silva</strong> <span>há 2 dias</span></div>
-                <p>Excelente aula! Ficou bem claro o conceito de funil. Já apliquei no meu negócio!</p>
-                <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 12 curtidas · Responder</button>
-              </div>
-            </div>
-            <div class="comment">
-              <img src="https://ui-avatars.com/api/?name=Maria+Costa&background=9c27b0&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
-              <div class="comment-body">
-                <div class="comment-meta"><strong>Maria Costa</strong> <span>há 5 dias</span></div>
-                <p>Professor, qual ferramenta você recomenda para começar em SEO com orçamento limitado?</p>
-                <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 8 curtidas · Responder</button>
-              </div>
-            </div>
-          </div>
+          <div id="commentsList"></div>
         </div>
 
         <div id="tab-notes" class="player-tab-content">
@@ -171,15 +218,15 @@
       </div>
     </div>
 
-    <!-- RIGHT: LESSON LIST -->
+    <!-- RIGHT: LESSON LIST SIDEBAR -->
     <aside class="player-sidebar">
       <div class="sidebar-header">
-        <h3>Conteúdo do Curso</h3>
-        <small>48 aulas • 12h 30min</small>
+        <h3 id="sidebarTitle">Conteúdo do Curso</h3>
+        <small id="sidebarMeta">Carregando...</small>
         <div class="sidebar-progress-bar">
-          <div class="sidebar-progress-fill" style="width: 4%"></div>
+          <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width: 0%"></div>
         </div>
-        <small style="display:block;margin-top:4px;font-size:0.7rem;color:var(--red)">4% concluído</small>
+        <small id="sidebarProgressLabel" style="display:block;margin-top:4px;font-size:0.7rem;color:var(--red)">0% concluído</small>
       </div>
       <div id="lessonList"></div>
     </aside>
@@ -189,79 +236,355 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/data.js"></script>
   <script src="js/supabase-config.js"></script>
-  <script src="js/db.js"></script>
+  <script src="js/supabase-db.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
   <script>
-    // Video control mock
-    let playing = false;
-    const vcPlayPause = document.getElementById('vcPlayPause');
-    const vcFill = document.getElementById('vcFill');
+  // ==========================================================
+  //  PLAYER — Dynamic course player with YouTube embed
+  // ==========================================================
+
+  let currentCourse   = null;
+  let allLessons      = [];   // flat [{moduleTitle, lessonIdx, globalIdx, ...lesson}]
+  let currentGlobalIdx = -1;
+
+  // ---------- YouTube helpers ----------
+  function extractYoutubeId(url) {
+    if (!url) return null;
+    let m = url.match(/youtu\.be\/([^?&#/]+)/);
+    if (m) return m[1];
+    m = url.match(/[?&]v=([^&#]+)/);
+    if (m) return m[1];
+    m = url.match(/youtube\.com\/embed\/([^?&#/]+)/);
+    if (m) return m[1];
+    return null;
+  }
+
+  function youtubeEmbed(url) {
+    const id = extractYoutubeId(url);
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+  }
+
+  function youtubeThumbnail(url) {
+    const id = extractYoutubeId(url);
+    if (!id) return '';
+    return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  }
+
+  // ---------- Load lesson video ----------
+  function loadLesson(globalIdx) {
+    const entry = allLessons[globalIdx];
+    if (!entry) return;
+    currentGlobalIdx = globalIdx;
+
+    const lesson = entry.lesson;
+    const embedUrl = youtubeEmbed(lesson.url);
+
+    // Replace placeholder with iframe (or show placeholder if no URL)
     const placeholder = document.getElementById('videoPlaceholder');
+    const wrap = document.getElementById('videoWrap');
 
-    placeholder?.addEventListener('click', () => {
-      playing = !playing;
-      if (vcPlayPause) vcPlayPause.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-      if (playing) simulateProgress();
-    });
-    vcPlayPause?.addEventListener('click', () => {
-      placeholder?.click();
-    });
+    // Remove any previous iframe
+    const prevIframe = wrap.querySelector('iframe');
+    if (prevIframe) prevIframe.remove();
 
-    let progress = 0, interval;
-    function simulateProgress() {
-      clearInterval(interval);
-      if (!playing) return;
-      interval = setInterval(() => {
-        if (!playing) { clearInterval(interval); return; }
-        progress = Math.min(progress + 0.05, 100);
-        if (vcFill) vcFill.style.width = progress + '%';
-        const t = document.querySelector('.vc-time');
-        const secs = Math.round(progress * 7.5);
-        const m = Math.floor(secs / 60), s = secs % 60;
-        if (t) t.textContent = `${m}:${s.toString().padStart(2,'0')} / 12:30`;
-        if (progress >= 100) { clearInterval(interval); playing = false; }
-      }, 200);
+    if (embedUrl) {
+      const iframe = document.createElement('iframe');
+      iframe.src = embedUrl;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1';
+      wrap.insertBefore(iframe, placeholder);
+      if (placeholder) placeholder.style.display = 'none';
+    } else {
+      // No URL — show placeholder with thumb
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+        const thumb = document.getElementById('videoThumb');
+        if (thumb && currentCourse.thumb) {
+          thumb.src = currentCourse.thumb;
+          thumb.style.display = 'block';
+        }
+        document.getElementById('placeholderLabel').textContent = lesson.title || 'Sem vídeo disponível';
+      }
     }
 
-    // Fullscreen
+    // Update control bar label
+    document.getElementById('vcLessonLabel').textContent = lesson.title || '';
+    document.getElementById('lessonTitleEl').textContent = lesson.title || '';
+
+    // Highlight active lesson in sidebar
+    document.querySelectorAll('.lesson-item').forEach((el, i) => {
+      el.classList.toggle('active', i === globalIdx);
+    });
+
+    // Save progress key
+    const notesKey = `vgracademy_notes_${currentCourse?.id}_${globalIdx}`;
+    const saved = localStorage.getItem(notesKey);
+    const notesArea = document.getElementById('notesArea');
+    if (notesArea) notesArea.value = saved || '';
+    notesArea?._noteKey && (notesArea._noteKey = notesKey);
+    if (notesArea) notesArea._noteKey = notesKey;
+  }
+
+  // ---------- Prev / Next ----------
+  function prevLesson() {
+    if (currentGlobalIdx > 0) loadLesson(currentGlobalIdx - 1);
+  }
+  function nextLesson() {
+    if (currentGlobalIdx < allLessons.length - 1) loadLesson(currentGlobalIdx + 1);
+  }
+
+  // ---------- Build sidebar ----------
+  function buildLessonList(course) {
+    const container = document.getElementById('lessonList');
+    if (!container) return;
+    container.innerHTML = '';
+    allLessons = [];
+    let globalIdx = 0;
+
+    const modules = course.modules || [];
+
+    if (modules.length === 0 && course.watchUrl) {
+      // Single-video course — treat watchUrl as one lesson
+      allLessons.push({ lesson: { title: course.title, url: course.watchUrl, duration: course.duration || '' }, globalIdx: 0 });
+      const item = document.createElement('div');
+      item.className = 'lesson-item';
+      item.dataset.idx = 0;
+      const ytThumb = youtubeThumbnail(course.watchUrl);
+      item.innerHTML = `
+        <span class="lesson-num">1</span>
+        ${ytThumb ? `<img class="lesson-thumb" src="${ytThumb}" alt="" />` : ''}
+        <div class="lesson-info">
+          <div class="lesson-title">${escapeHtml(course.title)}</div>
+          ${course.duration ? `<div class="lesson-duration"><i class="fas fa-clock" style="font-size:0.6rem"></i> ${escapeHtml(course.duration)}</div>` : ''}
+        </div>
+      `;
+      item.addEventListener('click', () => loadLesson(0));
+      container.appendChild(item);
+      return;
+    }
+
+    modules.forEach((mod, mi) => {
+      const modSection = document.createElement('div');
+      modSection.className = 'module-section';
+      const modTitle = document.createElement('div');
+      modTitle.className = 'module-title';
+      modTitle.textContent = mod.title || `Módulo ${mi + 1}`;
+      modSection.appendChild(modTitle);
+
+      (mod.lessons || []).forEach((lesson, li) => {
+        const idx = globalIdx++;
+        allLessons.push({ lesson, globalIdx: idx });
+        const item = document.createElement('div');
+        item.className = 'lesson-item';
+        item.dataset.idx = idx;
+        const ytThumb = youtubeThumbnail(lesson.url);
+        item.innerHTML = `
+          <span class="lesson-num">${idx + 1}</span>
+          ${ytThumb ? `<img class="lesson-thumb" src="${ytThumb}" alt="" />` : ''}
+          <div class="lesson-info">
+            <div class="lesson-title">${escapeHtml(lesson.title || `Aula ${li + 1}`)}</div>
+            ${lesson.duration ? `<div class="lesson-duration"><i class="fas fa-clock" style="font-size:0.6rem"></i> ${escapeHtml(lesson.duration)}</div>` : ''}
+          </div>
+          ${lesson.url ? '' : '<i class="fas fa-lock lesson-check" style="color:var(--gray2)" title="Sem vídeo"></i>'}
+        `;
+        item.addEventListener('click', () => loadLesson(idx));
+        modSection.appendChild(item);
+      });
+      container.appendChild(modSection);
+    });
+  }
+
+  // ---------- Build materials tab ----------
+  function buildMaterials(course) {
+    const list = document.getElementById('materialsList');
+    if (!list) return;
+    const materials = course.materials || [];
+    if (!materials.length) {
+      list.innerHTML = '<p style="font-size:0.85rem;color:var(--gray)">Nenhum material disponível para este curso.</p>';
+      return;
+    }
+    const iconMap = { pdf:'fa-file-pdf', ppt:'fa-file-powerpoint', xls:'fa-file-excel', video:'fa-file-video', link:'fa-link', zip:'fa-file-zipper', other:'fa-file' };
+    const colorMap = { pdf:'#e74c3c', ppt:'#e67e22', xls:'#27ae60', video:'#9b59b6', link:'#3498db', zip:'#f39c12', other:'#95a5a6' };
+    list.innerHTML = materials.map(mat => {
+      const type = mat.type || 'other';
+      const icon = iconMap[type] || 'fa-file';
+      const color = colorMap[type] || '#aaa';
+      return `
+        <a href="${escapeHtml(mat.url || '#')}" target="_blank" rel="noopener" class="resource-item">
+          <i class="fas ${icon}" style="color:${color}"></i>
+          <span>${escapeHtml(mat.name || 'Material')}</span>
+          <i class="fas fa-download" style="margin-left:auto;color:var(--gray)"></i>
+        </a>
+      `;
+    }).join('');
+  }
+
+  // ---------- Render full player ----------
+  function renderPlayer(course) {
+    currentCourse = course;
+
+    // Titles
+    document.title = `${course.title} — VGR Academy`;
+    document.getElementById('courseTitleEl').textContent = course.title || '';
+    document.getElementById('lessonTitleEl').textContent = 'Selecione uma aula';
+
+    // Meta row
+    const meta = document.getElementById('playerMetaRow');
+    if (meta) {
+      meta.innerHTML = `
+        ${course.instructor ? `<span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-user" style="color:var(--red);margin-right:4px"></i> ${escapeHtml(course.instructor)}</span>` : ''}
+        ${course.level ? `<span class="badge-level" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;font-size:0.75rem">${escapeHtml(course.level)}</span>` : ''}
+        ${course.rating ? `<span style="font-size:0.8rem;color:var(--gray)"><i class="fas fa-star" style="color:#ffd700;margin-right:4px"></i> ${course.rating}</span>` : ''}
+      `;
+    }
+
+    // Description
+    const descEl = document.getElementById('courseDescText');
+    if (descEl) {
+      if (course.details || course.desc) {
+        descEl.textContent = course.details || course.desc || '';
+        descEl.style.whiteSpace = 'pre-line';
+      } else {
+        descEl.textContent = 'Sem descrição disponível.';
+      }
+    }
+
+    // Sidebar header
+    const totalLessons = (course.modules || []).reduce((s, m) => s + (m.lessons?.length || 0), 0) || (course.watchUrl ? 1 : 0);
+    document.getElementById('sidebarTitle').textContent = 'Conteúdo do Curso';
+    document.getElementById('sidebarMeta').textContent =
+      `${totalLessons} aula${totalLessons !== 1 ? 's' : ''}${course.duration ? ' • ' + course.duration : ''}`;
+
+    // Hero thumb in placeholder
+    const thumbImg = document.getElementById('videoThumb');
+    if (thumbImg && (course.thumb || course.hero)) {
+      thumbImg.src = course.thumb || course.hero;
+      thumbImg.style.display = 'block';
+    }
+
+    // Build sidebar & materials
+    buildLessonList(course);
+    buildMaterials(course);
+
+    // Auto-play first lesson if single video
+    if ((course.modules || []).length === 0 && course.watchUrl) {
+      loadLesson(0);
+    } else if (allLessons.length > 0) {
+      // Show placeholder with first lesson's thumbnail
+      const firstUrl = allLessons[0]?.lesson?.url;
+      if (firstUrl) {
+        const yt = youtubeThumbnail(firstUrl);
+        if (thumbImg && yt) { thumbImg.src = yt; thumbImg.style.display = 'block'; }
+        document.getElementById('placeholderLabel').textContent = 'Clique numa aula para reproduzir';
+      }
+    }
+  }
+
+  // ---------- Init ----------
+  async function initPlayer() {
+    const params = new URLSearchParams(window.location.search);
+    const courseId = params.get('id');
+
+    // Try COURSES array (may already be loaded by app.js)
+    let course = window.COURSES?.find(c => String(c.id) === String(courseId));
+
+    // Fallback: fetch from Supabase directly
+    if (!course && courseId && window.supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('courses')
+          .select('*')
+          .eq('id', courseId)
+          .single();
+        if (!error && data && window.SupabaseDB) {
+          course = SupabaseDB.courseToLocal(data);
+        }
+      } catch (e) {
+        console.warn('[player] Supabase fetch:', e.message);
+      }
+    }
+
+    if (!course) {
+      document.getElementById('courseTitleEl').textContent = 'Curso não encontrado';
+      document.getElementById('lessonTitleEl').textContent = '';
+      document.getElementById('sidebarMeta').textContent = '';
+      return;
+    }
+
+    renderPlayer(course);
+  }
+
+  // Run init when DOM + scripts are ready
+  document.addEventListener('DOMContentLoaded', () => {
+    // Controls
+    document.getElementById('vcPrev')?.addEventListener('click', prevLesson);
+    document.getElementById('vcNext')?.addEventListener('click', nextLesson);
     document.getElementById('vcFullscreen')?.addEventListener('click', () => {
-      const vw = document.querySelector('.video-wrap');
+      const vw = document.getElementById('videoWrap');
       if (!document.fullscreenElement) vw?.requestFullscreen();
       else document.exitFullscreen();
+    });
+
+    // Tabs
+    document.querySelectorAll('.player-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.player-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.player-tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab)?.classList.add('active');
+      });
     });
 
     // Notes autosave
     const notesArea = document.getElementById('notesArea');
     if (notesArea) {
-      const saved = localStorage.getItem('vgracademy_notes');
-      if (saved) notesArea.value = saved;
-      notesArea.addEventListener('input', () => localStorage.setItem('vgracademy_notes', notesArea.value));
-    }
-    function saveNotes() {
-      localStorage.setItem('vgracademy_notes', document.getElementById('notesArea')?.value || '');
-      showToast('Notas salvas com sucesso!');
+      notesArea.addEventListener('input', () => {
+        if (notesArea._noteKey) localStorage.setItem(notesArea._noteKey, notesArea.value);
+      });
     }
 
-    // Comments
-    function postComment() {
-      const input = document.getElementById('commentInput');
-      if (!input?.value.trim()) return;
-      const list = document.getElementById('commentsList');
-      const div = document.createElement('div');
-      div.className = 'comment';
-      div.innerHTML = `
-        <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
-        <div class="comment-body">
-          <div class="comment-meta"><strong>Você</strong> <span>agora</span></div>
-          <p>${input.value.trim()}</p>
-          <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 0 curtidas · Responder</button>
-        </div>
-      `;
-      list?.prepend(div);
-      input.value = '';
-      showToast('Comentário enviado!');
+    initPlayer();
+  });
+
+  // Notes save button
+  function saveNotes() {
+    const notesArea = document.getElementById('notesArea');
+    if (notesArea?._noteKey) {
+      localStorage.setItem(notesArea._noteKey, notesArea.value);
+      if (typeof showToast === 'function') showToast('Notas salvas!');
     }
+  }
+
+  // Comments
+  function postComment() {
+    const input = document.getElementById('commentInput');
+    if (!input?.value.trim()) return;
+    const list = document.getElementById('commentsList');
+    const div = document.createElement('div');
+    div.className = 'comment';
+    div.innerHTML = `
+      <img src="https://ui-avatars.com/api/?name=Aluno&background=e50914&color=fff&size=36" alt="" style="border-radius:50%;width:36px;height:36px;flex-shrink:0" />
+      <div class="comment-body">
+        <div class="comment-meta"><strong>Você</strong> <span>agora</span></div>
+        <p>${escapeHtml(input.value.trim())}</p>
+        <button style="font-size:0.75rem;color:var(--gray);background:none;border:none;cursor:pointer;margin-top:4px"><i class="fas fa-thumbs-up"></i> 0 curtidas · Responder</button>
+      </div>
+    `;
+    list?.prepend(div);
+    input.value = '';
+    if (typeof showToast === 'function') showToast('Comentário enviado!');
+  }
+
+  // escapeHtml helper (in case app.js not loaded yet)
+  function escapeHtml(str) {
+    if (window.escapeHtml && window.escapeHtml !== escapeHtml) return window.escapeHtml(str);
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
   </script>
 </body>
 </html>

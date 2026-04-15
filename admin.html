@@ -541,9 +541,15 @@
               Execute o SQL abaixo em <strong>Supabase → SQL Editor</strong>:
             </p>
             <div style="position:relative">
-              <pre id="migrationSQL" style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;font-size:0.75rem;color:#a8e6a3;white-space:pre-wrap;margin:0;line-height:1.5">ALTER TABLE platform_settings
+              <pre id="migrationSQL" style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;font-size:0.75rem;color:#a8e6a3;white-space:pre-wrap;margin:0;line-height:1.5">-- Configurações da plataforma
+ALTER TABLE platform_settings
   ADD COLUMN IF NOT EXISTS trails        JSONB DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS home_sections JSONB DEFAULT NULL;</pre>
+  ADD COLUMN IF NOT EXISTS home_sections JSONB DEFAULT NULL;
+
+-- Módulos, aulas e materiais por curso
+ALTER TABLE courses
+  ADD COLUMN IF NOT EXISTS modules   JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS materials JSONB DEFAULT '[]'::jsonb;</pre>
               <button onclick="navigator.clipboard.writeText(document.getElementById('migrationSQL').textContent).then(()=>showToast('SQL copiado!','success'))"
                 style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.72rem">
                 <i class="fas fa-copy"></i> Copiar
@@ -643,11 +649,31 @@
       </div>
 
       <div class="form-group" style="margin-bottom:14px">
-        <label><i class="fas fa-file-alt"></i> Detalhes / Conteúdo Programático</label>
-        <textarea class="form-textarea" id="courseDetails" rows="5" placeholder="O que está incluído, módulos, pré-requisitos, certificado..."></textarea>
+        <label><i class="fas fa-file-alt"></i> Descrição Detalhada / Conteúdo Programático</label>
+        <textarea class="form-textarea" id="courseDetails" rows="4" placeholder="O que está incluído, pré-requisitos, certificado, o que o aluno vai aprender..."></textarea>
       </div>
 
-      <div class="form-row">
+      <!-- ── MÓDULOS & AULAS ── -->
+      <div class="form-section-divider">
+        <i class="fas fa-list-ol"></i> Módulos &amp; Aulas
+        <small style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin-left:6px;text-transform:none;font-weight:400">Organize o curso em módulos com aulas individuais (YouTube)</small>
+      </div>
+      <div id="modulesBuilder" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addModule()">
+        <i class="fas fa-plus"></i> Adicionar Módulo
+      </button>
+
+      <!-- ── MATERIAIS ── -->
+      <div class="form-section-divider" style="margin-top:20px">
+        <i class="fas fa-paperclip"></i> Materiais para Download
+        <small style="font-size:0.68rem;color:rgba(255,255,255,0.35);margin-left:6px;text-transform:none;font-weight:400">PDFs, planilhas, slides ou links externos</small>
+      </div>
+      <div id="materialsBuilder" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addMaterial()">
+        <i class="fas fa-plus"></i> Adicionar Material
+      </button>
+
+      <div class="form-row" style="margin-top:18px">
         <div class="form-group">
           <label><i class="fas fa-layer-group"></i> Seção na Home</label>
           <select class="form-select" id="courseSectionKey">

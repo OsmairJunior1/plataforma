@@ -93,45 +93,66 @@ const SupabaseDB = {
   /** Cria ou atualiza um curso. Requer sessão de admin. */
   async saveCourse(course) {
     if (!this._ok()) return null;
-    try {
-      // Mapear campo local → Supabase
-      const row = {
-        title:       course.title,
-        description: course.desc || course.description || '',
-        instructor:  course.instructor || '',
-        category:    course.category   || 'geral',
-        level:       course.level      || 'Iniciante',
-        duration:    course.duration   || '',
-        lessons:     course.lessons    || 0,
-        rating:      course.rating     || 4.8,
-        thumb:       course.thumb      || '',
-        hero:        course.hero       || '',
-        badge:       course.badge      || '',
-        tags:        course.tags       || [],
-        active:        course.active !== false,
-        featured:      course.featured      || false,
-        sort_order:    course.sort_order    || 0,
-        plan_required: course.planRequired  || 'free',
-        watch_url:     course.watchUrl      || '',
-        details:       course.details       || '',
-        updated_at:  new Date().toISOString(),
-      };
-      // Se tem ID real (number ou string numérica), inclui no upsert para UPDATE
-      const numId = Number(course.id);
-      if (course.id && !isNaN(numId) && numId > 0 && numId < 2000000000) {
-        row.id = numId;
-      }
-      const { data, error } = await supabaseClient
-        .from('courses')
-        .upsert(row)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    } catch (e) {
-      console.error('[SupabaseDB] saveCourse:', e.message);
-      return null;
+
+    const strip = (obj, ...keys) => { const r = { ...obj }; keys.forEach(k => delete r[k]); return r; };
+
+    // Mapear campo local → Supabase
+    const row = {
+      title:       course.title,
+      description: course.desc || course.description || '',
+      instructor:  course.instructor || '',
+      category:    course.category   || 'geral',
+      level:       course.level      || 'Iniciante',
+      duration:    course.duration   || '',
+      lessons:     course.lessons    || 0,
+      rating:      course.rating     || 4.8,
+      thumb:       course.thumb      || '',
+      hero:        course.hero       || '',
+      badge:       course.badge      || '',
+      tags:        course.tags       || [],
+      active:        course.active !== false,
+      featured:      course.featured      || false,
+      sort_order:    course.sort_order    || 0,
+      plan_required: course.planRequired  || 'free',
+      watch_url:     course.watchUrl      || '',
+      details:       course.details       || '',
+      modules:       course.modules       || [],
+      materials:     course.materials     || [],
+      updated_at:  new Date().toISOString(),
+    };
+
+    // Se tem ID real (number ou string numérica), inclui no upsert para UPDATE
+    const numId = Number(course.id);
+    if (course.id && !isNaN(numId) && numId > 0 && numId < 2000000000) {
+      row.id = numId;
     }
+
+    // Progressive fallback — tenta com colunas novas; se a tabela não tiver as colunas ainda, remove-as
+    const attempts = [
+      row,
+      strip(row, 'modules', 'materials'),
+      strip(row, 'modules'),
+      strip(row, 'materials'),
+    ];
+
+    for (const payload of attempts) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('courses')
+          .upsert(payload)
+          .select()
+          .single();
+        if (!error) return data;
+        if (!error.message?.includes('column')) throw error; // real error, don't retry
+      } catch (e) {
+        if (!e.message?.includes('column')) {
+          console.error('[SupabaseDB] saveCourse:', e.message);
+          return null;
+        }
+      }
+    }
+    console.error('[SupabaseDB] saveCourse: todas tentativas falharam. Execute a migração SQL.');
+    return null;
   },
 
   /** Remove um curso. Requer sessão de admin. */
@@ -239,6 +260,8 @@ const SupabaseDB = {
       planRequired: row.plan_required || 'free',
       watchUrl:     row.watch_url     || '',
       details:      row.details       || '',
+      modules:      row.modules    || [],
+      materials:    row.materials  || [],
       progress:     0,
     };
   },
