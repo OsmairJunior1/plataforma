@@ -330,6 +330,9 @@
       el.classList.toggle('active', i === globalIdx);
     });
 
+    // Update completed button for this lesson
+    updateCompletedBtn();
+
     // Save progress key
     const notesKey = `vgracademy_notes_${currentCourse?.id}_${globalIdx}`;
     const saved = localStorage.getItem(notesKey);
@@ -433,27 +436,63 @@
     }).join('');
   }
 
-  // ---------- Completed toggle ----------
-  function completedKey() { return `vgr_completed_${currentCourse?.id}`; }
+  // ---------- Per-lesson completion ----------
+  function lessonDoneKey(idx) { return `vgr_done_${currentCourse?.id}_${idx}`; }
+  function isLessonDone(idx)  { return localStorage.getItem(lessonDoneKey(idx)) === '1'; }
 
   function updateCompletedBtn() {
     const btn = document.getElementById('btnCompleted');
-    if (!btn || !currentCourse) return;
-    const done = localStorage.getItem(completedKey()) === '1';
-    btn.style.borderColor  = done ? '#00c853'                  : 'rgba(255,255,255,0.2)';
-    btn.style.background   = done ? 'rgba(0,200,83,0.12)'      : 'transparent';
-    btn.style.color        = done ? '#00c853'                  : 'rgba(255,255,255,0.6)';
+    if (!btn || currentGlobalIdx < 0) return;
+    const done = isLessonDone(currentGlobalIdx);
+    btn.style.borderColor = done ? '#00c853'             : 'rgba(255,255,255,0.2)';
+    btn.style.background  = done ? 'rgba(0,200,83,0.12)' : 'transparent';
+    btn.style.color       = done ? '#00c853'             : 'rgba(255,255,255,0.6)';
     btn.innerHTML = done
-      ? '<i class="fas fa-circle-check"></i> Concluído ✓'
-      : '<i class="fas fa-circle-check"></i> Marcar como concluído';
+      ? '<i class="fas fa-circle-check"></i> Aula concluída ✓'
+      : '<i class="fas fa-circle-check"></i> Marcar aula como concluída';
   }
 
   function toggleCompleted() {
-    const done = localStorage.getItem(completedKey()) === '1';
-    localStorage.setItem(completedKey(), done ? '0' : '1');
+    if (currentGlobalIdx < 0) {
+      if (typeof showToast === 'function') showToast('Selecione uma aula primeiro.', 'error');
+      return;
+    }
+    const done = isLessonDone(currentGlobalIdx);
+    localStorage.setItem(lessonDoneKey(currentGlobalIdx), done ? '0' : '1');
     updateCompletedBtn();
+    updateSidebarLessonDone(currentGlobalIdx, !done);
+    updateProgressBar();
     if (typeof showToast === 'function')
-      showToast(done ? 'Marcação removida.' : '🎉 Curso marcado como concluído!', done ? '' : 'success');
+      showToast(done ? 'Marcação removida.' : '✅ Aula marcada como concluída!', done ? '' : 'success');
+  }
+
+  function updateSidebarLessonDone(idx, done) {
+    const item = document.querySelector(`.lesson-item[data-idx="${idx}"]`);
+    if (!item) return;
+    let badge = item.querySelector('.lesson-done-badge');
+    if (done) {
+      if (!badge) {
+        badge = document.createElement('i');
+        badge.className = 'fas fa-circle-check lesson-done-badge';
+        badge.style.cssText = 'color:#00c853;font-size:0.85rem;flex-shrink:0;margin-left:auto';
+        item.appendChild(badge);
+      }
+      item.style.opacity = '0.65';
+    } else {
+      badge?.remove();
+      item.style.opacity = '';
+    }
+  }
+
+  function updateProgressBar() {
+    const total = allLessons.length;
+    if (!total) return;
+    const done = allLessons.filter((_, i) => isLessonDone(i)).length;
+    const pct = Math.round((done / total) * 100);
+    const fill = document.getElementById('sidebarProgressFill');
+    const label = document.getElementById('sidebarProgressLabel');
+    if (fill)  fill.style.width = `${pct}%`;
+    if (label) label.textContent = `${pct}% concluído`;
   }
 
   // ---------- Comments (Supabase — shared between all users) ----------
@@ -560,16 +599,15 @@
     buildLessonList(course);
     buildMaterials(course);
 
-    // Auto-play first lesson if single video
-    if ((course.modules || []).length === 0 && course.watchUrl) {
+    // Restore completed badges on sidebar + progress bar
+    allLessons.forEach((_, i) => {
+      if (isLessonDone(i)) updateSidebarLessonDone(i, true);
+    });
+    updateProgressBar();
+
+    // Auto-load first lesson automatically
+    if (allLessons.length > 0) {
       loadLesson(0);
-    } else if (allLessons.length > 0) {
-      const firstUrl = allLessons[0]?.lesson?.url;
-      if (firstUrl) {
-        const yt = youtubeThumbnail(firstUrl);
-        if (thumbImg && yt) { thumbImg.src = yt; thumbImg.style.display = 'block'; }
-        document.getElementById('placeholderLabel').textContent = 'Clique numa aula para reproduzir';
-      }
     }
 
     // Load comments
