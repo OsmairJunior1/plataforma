@@ -142,27 +142,50 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
 /* User Menu */
 .user-menu { position: relative; }
 .avatar {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 8px;
   cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background var(--transition);
 }
-.avatar img { border-radius: 4px; width: 36px; height: 36px; object-fit: cover; }
-.avatar .fa-caret-down { font-size: 0.75rem; color: var(--gray); transition: transform var(--transition); }
-.user-menu:hover .fa-caret-down { transform: rotate(180deg); }
+.avatar:hover { background: rgba(255,255,255,0.07); }
+.avatar img { border-radius: 50%; width: 34px; height: 34px; object-fit: cover; flex-shrink: 0; }
+.avatar .user-display-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avatar .fa-caret-down { font-size: 0.72rem; color: var(--gray); transition: transform var(--transition); }
+.user-menu:hover .fa-caret-down,
+.dropdown.dropdown-open ~ * .fa-caret-down,
+#avatarBtn.active .fa-caret-down { transform: rotate(180deg); }
 
 .dropdown {
   display: none;
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 10px);
   right: 0;
-  background: rgba(20,20,20,0.97);
+  background: rgba(18,18,18,0.98);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  min-width: 180px;
+  border-radius: 8px;
+  min-width: 190px;
   padding: 8px 0;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+  animation: dropdownFadeIn 0.15s ease;
 }
-.user-menu:hover .dropdown { display: block; }
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Abre por hover (desktop) OU pela classe JS (mobile/click) */
+.user-menu:hover .dropdown,
+.dropdown.dropdown-open { display: block; }
 .dropdown a {
   display: flex;
   align-items: center;
